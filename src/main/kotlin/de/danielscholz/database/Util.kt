@@ -1,24 +1,18 @@
-fun List<Long>.addOrReplaceEntry(entry: Long): List<Long> {
-    val index = this.indexOf(entry)
-    if (index >= 0) {
-        return this
-    }
-    return this + entry
+package de.danielscholz.database
+
+import kotlinx.collections.immutable.PersistentMap
+import kotlinx.collections.immutable.PersistentSet
+
+
+fun PersistentSet<Long>.addOrReplaceEntry(entry: Long): PersistentSet<Long> {
+    if (entry in this) return this
+    return this.add(entry)
 }
 
-fun List<Long>.addOrReplaceEntries(entries: Collection<Long>): List<Long> {
-    val result = ArrayList<Long>(this.size + entries.size)
-    val set = entries.toMutableSet()
-    this.forEach {
-        if (it in set) {
-            result += it
-            set.remove(it)
-        } else {
-            result += it
-        }
-    }
-    result.addAll(set)
-    return result
+fun PersistentSet<Long>.addOrReplaceEntries(entries: Collection<Long>): PersistentSet<Long> {
+    val missing = entries.any { it !in this }
+    if (!missing) return this
+    return this.addAll(entries)
 }
 
 //fun <T : Base> List<T>.addOrReplaceEntry(entry: T): List<T> {
@@ -50,42 +44,33 @@ fun List<Long>.addOrReplaceEntries(entries: Collection<Long>): List<Long> {
 //}
 
 
-fun <T : Base> Map<Long, T>.addOrReplace(entry: T): Map<Long, T> {
-    val map = this.toMutableMap()
-    val old = map.put(entry.id, entry)
-    if (old != entry) {
-        return map
-    }
-    return this
-}
+//fun <T : Base> Map<Long, T>.addOrReplace(entry: T): Map<Long, T> {
+//    val map = this.toMutableMap()
+//    val old = map.put(entry.id, entry)
+//    if (old != entry) {
+//        return map
+//    }
+//    return this
+//}
 
 
-fun <T : Base> Map<Long, T>.addOrReplace(entries: List<T>): Map<Long, T> {
-    val map = this.toMutableMap()
-    var dirty = false
-    for (entry in entries) {
-        val old = map.put(entry.id, entry)
-        if (old != entry) {
-            dirty = true
-        }
-    }
-    if (dirty) {
-        return map
-    }
-    return this
+fun <T : Base> PersistentMap<Long, T>.addOrReplace(entries: List<T>): PersistentMap<Long, T> {
+    val changed = entries.any { this[it.id] != it }
+    if (!changed) return this
+    return this.putAll(entries.associateBy { it.id })
 }
 
-infix fun <T : Base> List<T>.idEquals(other: List<T>): Boolean {
-    if (this === other) return true
-    if (this.size != other.size) return false
-    if (this.isEmpty()) return true
-    this.forEachIndexed { index, t ->
-        if (t.id != other[index].id) {
-            return false
-        }
-    }
-    return true
-}
+//infix fun <T : Base> List<T>.idEquals(other: List<T>): Boolean {
+//    if (this === other) return true
+//    if (this.size != other.size) return false
+//    if (this.isEmpty()) return true
+//    this.forEachIndexed { index, t ->
+//        if (t.id != other[index].id) {
+//            return false
+//        }
+//    }
+//    return true
+//}
 
 //infix fun <T> List<T>.refEquals(other: List<T>): Boolean {
 //    if (this === other) return true

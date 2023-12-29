@@ -1,5 +1,12 @@
+package de.danielscholz.database
+
 import com.google.common.collect.MultimapBuilder
 import com.google.common.collect.SetMultimap
+import kotlinx.collections.immutable.PersistentMap
+import kotlinx.collections.immutable.PersistentSet
+import kotlinx.collections.immutable.persistentMapOf
+import kotlinx.collections.immutable.persistentSetOf
+import kotlinx.collections.immutable.toPersistentSet
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import kotlinx.serialization.encodeToString
@@ -12,7 +19,7 @@ import java.util.concurrent.atomic.AtomicLong
 object Database {
 
     @Volatile
-    var snapShot: SnapShot = SnapShot(root = Shop(""))
+    var snapShot: SnapShot = SnapShot(root = Shop(""), changed = persistentSetOf(), parent = null)
 
     fun writeDiff() = true
 
@@ -73,7 +80,9 @@ interface MyContext {
 class SnapShot(
     val version: Long = 0,
     internal val root: Shop,
-    internal val allEntries: Map<Long, Base> = mapOf(),
+    internal val allEntries: PersistentMap<Long, Base> = persistentMapOf(),
+    val changed: PersistentSet<Base>,
+    val parent: SnapShot?,
 ) {
 
     @Transient
@@ -98,7 +107,7 @@ class SnapShot(
         root: Shop = this.root,
         changedEntries: Collection<Base>
     ): SnapShot {
-        return SnapShot(version + 1, root, allEntries.addOrReplace(changedEntries.toList()))
+        return SnapShot(version + 1, root, allEntries.addOrReplace(changedEntries.toList()), changedEntries.toPersistentSet(), this)
     }
 
 //    @Transient

@@ -1,3 +1,7 @@
+package de.danielscholz.database
+
+import kotlinx.collections.immutable.PersistentSet
+import kotlinx.collections.immutable.persistentSetOf
 import kotlinx.serialization.Serializable
 
 
@@ -6,12 +10,12 @@ class Shop private constructor(
     override val id: Long,
     override val version: Long,
     val title: String,
-    val itemGroupIds: List<Long>,
+    val itemGroupIds: PersistentSet<Long>,
 ) : Base() {
 
     constructor(
         title: String,
-    ) : this(getNextId(), 0, title, listOf())
+    ) : this(getNextId(), 0, title, persistentSetOf())
 
 
     // generated
@@ -22,7 +26,7 @@ class Shop private constructor(
 
     // generated
     context(Change, MyContext)
-    private fun changeIntern(title: String = this.title, itemGroupIds: List<Long> = this.itemGroupIds): Shop {
+    private fun changeIntern(title: String = this.title, itemGroupIds: PersistentSet<Long> = this.itemGroupIds): Shop {
         if (title != this.title || itemGroupIds != this.itemGroupIds) {
             return Shop(id, version + 1, title, itemGroupIds).persist()
         }
@@ -31,9 +35,12 @@ class Shop private constructor(
 
     // generated
     context(MyContext)
-    fun itemGroups(): List<ItemGroup> {
+    fun itemGroups(): Collection<ItemGroup> {
         return itemGroupIds.map { it.resolve() as ItemGroup }
     }
+
+    context(MyContext)
+    fun itemGroupsSorted(): List<ItemGroup> = itemGroups().sortedBy { it.id }
 
     // generated
     context(Change, MyContext)
@@ -43,7 +50,7 @@ class Shop private constructor(
 
     // generated
     context(Change, MyContext)
-    fun addOrReplaceItemGroups(itemGroups: List<ItemGroup>): Shop {
+    fun addOrReplaceItemGroups(itemGroups: PersistentSet<ItemGroup>): Shop {
         return changeIntern(itemGroupIds = itemGroupIds.addOrReplaceEntries(itemGroups.map { it.persist().id }))
     }
 
@@ -59,12 +66,12 @@ class ItemGroup private constructor(
     override val id: Long,
     override val version: Long,
     val title: String,
-    val itemIds: List<Long>,
+    val itemIds: PersistentSet<Long>,
 ) : Base() {
 
     constructor(
         title: String,
-    ) : this(getNextId(), 0, title, listOf())
+    ) : this(getNextId(), 0, title, persistentSetOf())
 
 
     // generated
@@ -75,7 +82,7 @@ class ItemGroup private constructor(
 
     // generated
     context(Change, MyContext)
-    private fun changeIntern(title: String = this.title, itemIds: List<Long> = this.itemIds): ItemGroup {
+    private fun changeIntern(title: String = this.title, itemIds: PersistentSet<Long> = this.itemIds): ItemGroup {
         if (title != this.title || itemIds != this.itemIds) {
             return ItemGroup(id, version + 1, title, itemIds).persist()
         }
@@ -84,9 +91,12 @@ class ItemGroup private constructor(
 
     // generated
     context(MyContext)
-    fun items(): List<Item> {
+    fun items(): Collection<Item> {
         return itemIds.map { it.resolve() as Item }
     }
+
+    context(MyContext)
+    fun itemsSorted(): List<Item> = items().sortedBy { it.id }
 
     // generated
     context(Change, MyContext)

@@ -1,10 +1,14 @@
+package de.danielscholz.database
+
+import kotlinx.collections.immutable.persistentSetOf
+
 fun main() {
 
     with(Database.snapShot.asContext) {
         Database.update {
             root.change(title = "test title")
                 .addOrReplaceItemGroups(
-                    listOf(
+                    persistentSetOf(
                         ItemGroup(title = "Deo")
                             .addOrReplaceItem(Item(title = "Soap", price = 1.79)),
                         ItemGroup(title = "Test")
@@ -16,7 +20,7 @@ fun main() {
 
     with(Database.snapShot.asContext) {
         Database.update {
-            root.itemGroups()[0].addOrReplaceItem(
+            root.itemGroupsSorted().first().addOrReplaceItem(
                 Item(title = "Milk", price = 1.29)
             )
         }
@@ -24,21 +28,21 @@ fun main() {
 
     with(Database.snapShot.asContext) {
         Database.update {
-            with(root.itemGroups()[0]) {
-                addOrReplaceItem(items()[0].change(price = 2.99))
+            with(root.itemGroupsSorted().first()) {
+                addOrReplaceItem(itemsSorted().first().change(price = 2.99))
             }
         }
     }
 
     with(Database.snapShot.asContext) {
         Database.update {
-            root.itemGroups()[1].items()[0].change(price = 3.99)
+            root.itemGroupsSorted().first().itemsSorted().first().change(price = 3.99)
         }
     }
 
     with(Database.snapShot.asContext) {
         Database.update {
-            root.itemGroups()[1].items()[0].change(price = 3.99) // no change
+            root.itemGroupsSorted().first().itemsSorted().first().change(price = 3.99) // no change
         }
     }
 }
