@@ -38,7 +38,7 @@ object Database {
 
             if (writeDiff()) {
                 val file = File("database_v${changedSnapShot.version}_diff.json")
-                Files.writeString(file.toPath(), json.encodeToString(Diff(change.changed.values.toList())))
+                Files.writeString(file.toPath(), json.encodeToString(Diff(change.changed.values)))
                 println(file.name)
             } else {
                 val file = File("database_v${changedSnapShot.version}_full.json")
@@ -94,7 +94,7 @@ class Change {
     internal fun <T : Base> T.persist(): T {
         val existing = snapShot.allEntries[this.id]
         if (existing == this) return this
-        changed += this.id to this
+        changed[this.id] = this
         return this
     }
 
@@ -135,14 +135,11 @@ class SnapShot(
         return SnapShot(version + 1, root, allEntries.addOrReplace(changedEntries.toList()), changedEntries.toPersistentSet(), this)
     }
 
-//    @Transient
-//    val meta = Meta(root)
-
 }
 
 
 @Serializable
-private class Diff(val changed: List<Base>)
+private class Diff(val changed: Collection<Base>)
 
 
 @Serializable

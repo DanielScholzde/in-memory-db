@@ -1,11 +1,16 @@
+@file:UseSerializers(PersistentSetSerializer::class)
+
 package de.danielscholz.database
 
 import kotlinx.collections.immutable.PersistentSet
 import kotlinx.collections.immutable.persistentSetOf
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.UseSerializers
 
 
 @Serializable
+@SerialName("Shop")
 class Shop private constructor(
     override val id: ID,
     override val version: Long,
@@ -42,25 +47,39 @@ class Shop private constructor(
     context(MyContext)
     fun itemGroupsSorted(): List<ItemGroup> = itemGroups().sortedBy { it.id }
 
+
     // generated
     context(Change, MyContext)
-    fun addOrReplaceItemGroup(itemGroup: ItemGroup): Shop {
-        return changeIntern(itemGroupIds = itemGroupIds.addOrReplaceEntry(itemGroup.persist().id))
+    fun addItemGroup(itemGroup: ItemGroup): Shop {
+        return changeIntern(itemGroupIds = itemGroupIds.add(itemGroup.persist().id))
     }
 
     // generated
     context(Change, MyContext)
-    fun addOrReplaceItemGroups(itemGroups: PersistentSet<ItemGroup>): Shop {
-        return changeIntern(itemGroupIds = itemGroupIds.addOrReplaceEntries(itemGroups.map { it.persist().id }))
+    fun addItemGroups(itemGroups: Set<ItemGroup>): Shop {
+        return changeIntern(itemGroupIds = itemGroupIds.addAll(itemGroups.map { it.persist().id }))
     }
 
     // generated
-    override val referencedIds: Set<ID> = itemGroupIds
+    context(Change, MyContext)
+    fun removeItemGroup(itemGroup: ItemGroup): Shop {
+        return changeIntern(itemGroupIds = itemGroupIds.remove(itemGroup.id))
+    }
+
+    // generated
+    context(Change, MyContext)
+    fun removeItemGroups(itemGroups: Set<ItemGroup>): Shop {
+        return changeIntern(itemGroupIds = itemGroupIds.removeAll(itemGroups.map { it.id }))
+    }
+
+    // generated
+    override val referencedIds get() = itemGroupIds
 
 }
 
 
 @Serializable
+@SerialName("ItemGroup")
 class ItemGroup private constructor(
     override val id: ID,
     override val version: Long,
@@ -97,19 +116,27 @@ class ItemGroup private constructor(
     context(MyContext)
     fun itemsSorted(): List<Item> = items().sortedBy { it.id }
 
+
     // generated
     context(Change, MyContext)
-    fun addOrReplaceItem(item: Item): ItemGroup {
-        return changeIntern(itemIds = itemIds.addOrReplaceEntry(item.persist().id))
+    fun removeItem(item: Item): ItemGroup {
+        return changeIntern(itemIds = itemIds.remove(item.id))
     }
 
     // generated
-    override val referencedIds: Set<ID> = itemIds
+    context(Change, MyContext)
+    fun addItem(item: Item): ItemGroup {
+        return changeIntern(itemIds = itemIds.add(item.persist().id))
+    }
+
+    // generated
+    override val referencedIds get() = itemIds
 
 }
 
 
 @Serializable
+@SerialName("Item")
 class Item private constructor(
     override val id: ID,
     override val version: Long,
@@ -138,13 +165,7 @@ class Item private constructor(
     }
 
     // generated
-    override val referencedIds: Set<ID> = setOf()
+    override val referencedIds get() = setOf<ID>()
 
 }
-
-class Meta(root: Shop) {
-
-
-}
-
 
