@@ -24,13 +24,13 @@ class Shop private constructor(
 
 
     // generated
-    context(Change, MyContext)
+    context(ChangeContext)
     fun change(title: String = this.title): Shop {
         return changeIntern(title = title)
     }
 
     // generated
-    context(Change, MyContext)
+    context(ChangeContext)
     private fun changeIntern(title: String = this.title, itemGroupIds: PersistentSet<ID> = this.itemGroupIds): Shop {
         if (title != this.title || itemGroupIds != this.itemGroupIds) {
             return Shop(id, version + 1, title, itemGroupIds).persist()
@@ -39,35 +39,35 @@ class Shop private constructor(
     }
 
     // generated
-    context(MyContext)
+    context(SnapShotContext)
     fun itemGroups(): Collection<ItemGroup> {
         return itemGroupIds.map { it.resolve() as ItemGroup }
     }
 
-    context(MyContext)
+    context(SnapShotContext)
     fun itemGroupsSorted(): List<ItemGroup> = itemGroups().sortedBy { it.id }
 
 
     // generated
-    context(Change, MyContext)
+    context(ChangeContext)
     fun addItemGroup(itemGroup: ItemGroup): Shop {
         return changeIntern(itemGroupIds = itemGroupIds.add(itemGroup.persist().id))
     }
 
     // generated
-    context(Change, MyContext)
+    context(ChangeContext)
     fun addItemGroups(itemGroups: Set<ItemGroup>): Shop {
         return changeIntern(itemGroupIds = itemGroupIds.addAll(itemGroups.map { it.persist().id }))
     }
 
     // generated
-    context(Change, MyContext)
+    context(ChangeContext)
     fun removeItemGroup(itemGroup: ItemGroup): Shop {
         return changeIntern(itemGroupIds = itemGroupIds.remove(itemGroup.id))
     }
 
     // generated
-    context(Change, MyContext)
+    context(ChangeContext)
     fun removeItemGroups(itemGroups: Set<ItemGroup>): Shop {
         return changeIntern(itemGroupIds = itemGroupIds.removeAll(itemGroups.map { it.id }))
     }
@@ -93,13 +93,13 @@ class ItemGroup private constructor(
 
 
     // generated
-    context(Change, MyContext)
+    context(ChangeContext)
     fun change(title: String = this.title): ItemGroup {
         return changeIntern(title = title)
     }
 
     // generated
-    context(Change, MyContext)
+    context(ChangeContext)
     private fun changeIntern(title: String = this.title, itemIds: PersistentSet<ID> = this.itemIds): ItemGroup {
         if (title != this.title || itemIds != this.itemIds) {
             return ItemGroup(id, version + 1, title, itemIds).persist()
@@ -108,23 +108,23 @@ class ItemGroup private constructor(
     }
 
     // generated
-    context(MyContext)
+    context(SnapShotContext)
     fun items(): Collection<Item> {
         return itemIds.map { it.resolve() as Item }
     }
 
-    context(MyContext)
+    context(SnapShotContext)
     fun itemsSorted(): List<Item> = items().sortedBy { it.id }
 
 
     // generated
-    context(Change, MyContext)
+    context(ChangeContext)
     fun removeItem(item: Item): ItemGroup {
         return changeIntern(itemIds = itemIds.remove(item.id))
     }
 
     // generated
-    context(Change, MyContext)
+    context(ChangeContext)
     fun addItem(item: Item): ItemGroup {
         return changeIntern(itemIds = itemIds.add(item.persist().id))
     }
@@ -150,13 +150,13 @@ class Item private constructor(
     ) : this(getNextId(), 0, title, price)
 
     // generated
-    context(MyContext)
+    context(SnapShotContext)
     fun getItemGroup(): ItemGroup {
         return this.getReferencedBy().filterIsInstance<ItemGroup>().first()
     }
 
     // generated
-    context(Change, MyContext)
+    context(ChangeContext)
     fun change(title: String = this.title, price: Double = this.price): Item {
         if (title != this.title || price != this.price) {
             return Item(id, version + 1, title, price).persist()

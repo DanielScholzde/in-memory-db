@@ -21,13 +21,100 @@ typealias ID = Long
 object Database {
 
     @Volatile
-    var snapShot: SnapShot = SnapShot(root = Shop(""), changed = persistentSetOf(), parent = null)
+    internal var _snapShot: SnapShot = SnapShot(root = Shop(""), changed = persistentSetOf(), parent = null)
 
-    fun writeDiff() = true
+    val snapShot: SnapShotContext get() = SnapShotContextImpl(_snapShot)
+
+    internal fun writeDiff() = true
+
+
+    internal val json = Json {
+        encodeDefaults = true
+        prettyPrint = true
+    }
+
+}
+
+
+interface SnapShotContext {
+
+    val snapShot: SnapShot
+
+    val root: Shop
+
+    fun ID.resolve(): Base
+
+    fun Base.getReferencedBy(): Collection<Base>
+
+    fun update(update: ChangeContext.() -> Unit)
+
+}
+
+interface ChangeContext : SnapShotContext {
+
+    context(SnapShotContext)
+    fun <T : Base> T.persist(): T
+
+}
+
+
+class ChangeContextImpl(override val snapShot: SnapShot) : ChangeContext {
+
+    internal val changed: MutableMap<ID, Base> = mutableMapOf()
+
+    override val root: Shop get() = changed[snapShot.root.id]?.let { it as Shop } ?: snapShot.root
+
+    override fun ID.resolve() = changed[this] ?: snapShot.allEntries[this] ?: throw Exception()
+
+    context(SnapShotContext)
+    override fun <T : Base> T.persist(): T {
+        val existing = snapShot.allEntries[this.id]
+        if (existing == this) return this
+        changed[this.id] = this
+        return this
+    }
+
+    override fun Base.getReferencedBy(): Collection<Base> {
+        val referencedByObjectIds = snapShot.backReferences[this.id]
+        val x = changed.values.map { it.referencedIds }
+        val result = mutableSetOf<ID>()
+        referencedByObjectIds.forEach {
+            if (it !in changed.keys) {
+                result.add(it)
+            } else {
+                val referencedIds = changed[it]!!.referencedIds
+                if (it in referencedIds) result += it
+            }
+        }
+        return result.map { it.resolve() }
+    }
+
+    override fun update(update: ChangeContext.() -> Unit) {
+        throw Exception()
+    }
+
+}
+
+class SnapShotContextImpl(snapShot: SnapShot) : SnapShotContext {
+
+    @Volatile
+    private var _snapShot: SnapShot = snapShot
+
+    override val snapShot: SnapShot
+        get() = _snapShot
+
+    override val root: Shop get() = snapShot.root
+
+    override fun ID.resolve() = snapShot.allEntries[this] ?: throw Exception()
+
+    override fun Base.getReferencedBy(): Collection<Base> {
+        val referencedByObjectIds = snapShot.backReferences[this.id]
+        return referencedByObjectIds.map { it.resolve() }
+    }
 
     @Synchronized
-    fun update(update: Change.() -> Unit) {
-        val change = Change()
+    override fun update(update: ChangeContext.() -> Unit) {
+        val change = ChangeContextImpl(snapShot)
 
         change.update()
 
@@ -36,68 +123,20 @@ object Database {
             val changedRoot = change.changed[snapShot.root.id]?.let { it as Shop }
             val changedSnapShot = snapShot.copyIntern(changedRoot ?: snapShot.root, change.changed.values)
 
-            if (writeDiff()) {
+            if (Database.writeDiff()) {
                 val file = File("database_v${changedSnapShot.version}_diff.json")
-                Files.writeString(file.toPath(), json.encodeToString(Diff(change.changed.values)))
+                Files.writeString(file.toPath(), Database.json.encodeToString(Diff(change.changed.values)))
                 println(file.name)
             } else {
                 val file = File("database_v${changedSnapShot.version}_full.json")
-                Files.writeString(file.toPath(), json.encodeToString(changedSnapShot))
+                Files.writeString(file.toPath(), Database.json.encodeToString(changedSnapShot))
                 println(file.name)
             }
 
-            snapShot = changedSnapShot
+            Database._snapShot = changedSnapShot
+            _snapShot = changedSnapShot
         }
     }
-
-    private val json = Json {
-        encodeDefaults = true
-        prettyPrint = true
-    }
-
-}
-
-
-interface MyContext {
-    val snapShot: SnapShot
-    val change: Change?
-
-    val root: Shop get() = change?.changed?.get(snapShot.root.id)?.let { it as Shop } ?: snapShot.root
-
-    fun ID.resolve() = change?.changed?.get(this) ?: snapShot.allEntries[this] ?: throw Exception()
-
-    fun Base.getReferencedBy(): Collection<Base> {
-        val referencedByObjectIds = snapShot.backReferences[this.id]
-        if (change == null) {
-            return referencedByObjectIds.map { it.resolve() }
-        }
-        val x = change!!.changed.values.map { it.referencedIds }
-        val result = mutableSetOf<ID>()
-        referencedByObjectIds.forEach {
-            if (it !in change!!.changed.keys) {
-                result.add(it)
-            } else {
-                val referencedIds = change!!.changed[it]!!.referencedIds
-                if (it in referencedIds) result += it
-            }
-        }
-        return result.map { it.resolve() }
-    }
-}
-
-
-class Change {
-
-    internal val changed = mutableMapOf<ID, Base>()
-
-    context(MyContext)
-    internal fun <T : Base> T.persist(): T {
-        val existing = snapShot.allEntries[this.id]
-        if (existing == this) return this
-        changed[this.id] = this
-        return this
-    }
-
 }
 
 
@@ -120,12 +159,6 @@ class SnapShot(
             }
         }
     }
-
-    val asContext: MyContext
-        get() = object : MyContext {
-            override val snapShot: SnapShot = this@SnapShot
-            override val change: Change? = null
-        }
 
 
     internal fun copyIntern(
