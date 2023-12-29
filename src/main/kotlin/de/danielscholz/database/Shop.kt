@@ -7,10 +7,10 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 class Shop private constructor(
-    override val id: Long,
+    override val id: ID,
     override val version: Long,
     val title: String,
-    val itemGroupIds: PersistentSet<Long>,
+    val itemGroupIds: PersistentSet<ID>,
 ) : Base() {
 
     constructor(
@@ -26,7 +26,7 @@ class Shop private constructor(
 
     // generated
     context(Change, MyContext)
-    private fun changeIntern(title: String = this.title, itemGroupIds: PersistentSet<Long> = this.itemGroupIds): Shop {
+    private fun changeIntern(title: String = this.title, itemGroupIds: PersistentSet<ID> = this.itemGroupIds): Shop {
         if (title != this.title || itemGroupIds != this.itemGroupIds) {
             return Shop(id, version + 1, title, itemGroupIds).persist()
         }
@@ -55,18 +55,19 @@ class Shop private constructor(
     }
 
     // generated
-    override fun getReferencedIds(): Set<Long> {
-        return itemGroupIds.toSet()
+    override fun getReferencedIds(): Set<ID> {
+        return itemGroupIds
     }
 
 }
 
+
 @Serializable
 class ItemGroup private constructor(
-    override val id: Long,
+    override val id: ID,
     override val version: Long,
     val title: String,
-    val itemIds: PersistentSet<Long>,
+    val itemIds: PersistentSet<ID>,
 ) : Base() {
 
     constructor(
@@ -82,7 +83,7 @@ class ItemGroup private constructor(
 
     // generated
     context(Change, MyContext)
-    private fun changeIntern(title: String = this.title, itemIds: PersistentSet<Long> = this.itemIds): ItemGroup {
+    private fun changeIntern(title: String = this.title, itemIds: PersistentSet<ID> = this.itemIds): ItemGroup {
         if (title != this.title || itemIds != this.itemIds) {
             return ItemGroup(id, version + 1, title, itemIds).persist()
         }
@@ -105,14 +106,15 @@ class ItemGroup private constructor(
     }
 
     // generated
-    override fun getReferencedIds(): Set<Long> {
-        return itemIds.toSet()
+    override fun getReferencedIds(): Set<ID> {
+        return itemIds
     }
 }
 
+
 @Serializable
 class Item private constructor(
-    override val id: Long,
+    override val id: ID,
     override val version: Long,
     val title: String,
     val price: Double,
@@ -126,8 +128,7 @@ class Item private constructor(
     // generated
     context(MyContext)
     fun getItemGroup(): ItemGroup {
-        return change?.changed?.values?.filterIsInstance<ItemGroup>()?.firstOrNull { this.id in it.itemIds }
-            ?: snapShot.allEntries.values.filterIsInstance<ItemGroup>().first { this.id in it.itemIds }
+        return this.getReferencedBy().filterIsInstance<ItemGroup>().first()
     }
 
     // generated
@@ -140,7 +141,7 @@ class Item private constructor(
     }
 
     // generated
-    override fun getReferencedIds(): Set<Long> {
+    override fun getReferencedIds(): Set<ID> {
         return setOf()
     }
 }

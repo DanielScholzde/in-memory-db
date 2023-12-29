@@ -4,12 +4,12 @@ import kotlinx.collections.immutable.PersistentMap
 import kotlinx.collections.immutable.PersistentSet
 
 
-fun PersistentSet<Long>.addOrReplaceEntry(entry: Long): PersistentSet<Long> {
+fun PersistentSet<ID>.addOrReplaceEntry(entry: ID): PersistentSet<ID> {
     if (entry in this) return this
     return this.add(entry)
 }
 
-fun PersistentSet<Long>.addOrReplaceEntries(entries: Collection<Long>): PersistentSet<Long> {
+fun PersistentSet<ID>.addOrReplaceEntries(entries: Collection<ID>): PersistentSet<ID> {
     val missing = entries.any { it !in this }
     if (!missing) return this
     return this.addAll(entries)

@@ -15,6 +15,8 @@ import java.io.File
 import java.nio.file.Files
 import java.util.concurrent.atomic.AtomicLong
 
+typealias ID = Long
+
 
 object Database {
 
@@ -61,32 +63,52 @@ interface MyContext {
 
     val root: Shop get() = change?.changed?.get(snapShot.root.id)?.let { it as Shop } ?: snapShot.root
 
-    fun Long.resolve() = change?.changed?.get(this) ?: snapShot.allEntries[this] ?: throw Exception()
+    fun ID.resolve() = change?.changed?.get(this) ?: snapShot.allEntries[this] ?: throw Exception()
 
-    fun Base.getReferencedBy(): List<Base> {
-        val ids = snapShot.backReferences[this.id]
+    fun Base.getReferencedBy(): Collection<Base> {
+        val referencedByObjectIds = snapShot.backReferences[this.id]
         if (change == null) {
-            return ids.map { it.resolve() }
+            return referencedByObjectIds.map { it.resolve() }
         }
-        change!!.changed.map { it.value.getReferencedIds() }
-        val result = mutableSetOf<Long>()
-        ids.forEach {
-
+        val x = change!!.changed.values.map { it.getReferencedIds() }
+        val result = mutableSetOf<ID>()
+        referencedByObjectIds.forEach {
+            if (it !in change!!.changed.keys) {
+                result.add(it)
+            } else {
+                val referencedIds = change!!.changed[it]!!.getReferencedIds()
+                if (it in referencedIds) result += it
+            }
         }
+        return result.map { it.resolve() }
     }
+}
+
+class Change {
+
+    internal val changed = mutableMapOf<ID, Base>()
+
+    context(MyContext)
+    internal fun <T : Base> T.persist(): T {
+        val existing = snapShot.allEntries[this.id]
+        if (existing == this) return this
+        changed += this.id to this
+        return this
+    }
+
 }
 
 @Serializable
 class SnapShot(
     val version: Long = 0,
     internal val root: Shop,
-    internal val allEntries: PersistentMap<Long, Base> = persistentMapOf(),
+    internal val allEntries: PersistentMap<ID, Base> = persistentMapOf(),
     val changed: PersistentSet<Base>,
     val parent: SnapShot?,
 ) {
 
     @Transient
-    internal val backReferences: SetMultimap<Long, Long> = MultimapBuilder.hashKeys().hashSetValues().build()
+    internal val backReferences: SetMultimap<ID, ID> = MultimapBuilder.hashKeys().hashSetValues().build()
 
     init {
         allEntries.values.forEach {
@@ -104,7 +126,7 @@ class SnapShot(
 
 
     internal fun copyIntern(
-        root: Shop = this.root,
+        root: Shop,
         changedEntries: Collection<Base>
     ): SnapShot {
         return SnapShot(version + 1, root, allEntries.addOrReplace(changedEntries.toList()), changedEntries.toPersistentSet(), this)
@@ -115,19 +137,6 @@ class SnapShot(
 
 }
 
-class Change {
-
-    internal val changed = mutableMapOf<Long, Base>()
-
-    context(MyContext)
-    internal fun <T : Base> T.persist(): T {
-        val existing = snapShot.allEntries[this.id]
-        if (existing == this) return this
-        changed += this.id to this
-        return this
-    }
-
-}
 
 @Serializable
 private class Diff(val changed: List<Base>)
@@ -141,11 +150,11 @@ sealed class Base {
         fun getNextId() = idGen.incrementAndGet()
     }
 
-    abstract val id: Long
+    abstract val id: ID
 
     abstract val version: Long
 
-    abstract fun getReferencedIds(): Set<Long>
+    abstract fun getReferencedIds(): Set<ID>
 
 
     final override fun equals(other: Any?) = this === other

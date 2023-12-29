@@ -2,6 +2,7 @@ package de.danielscholz.database
 
 import kotlinx.collections.immutable.persistentSetOf
 
+
 fun main() {
 
     with(Database.snapShot.asContext) {
