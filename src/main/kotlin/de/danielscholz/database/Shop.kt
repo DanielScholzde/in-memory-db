@@ -55,9 +55,7 @@ class Shop private constructor(
     }
 
     // generated
-    override fun getReferencedIds(): Set<ID> {
-        return itemGroupIds
-    }
+    override val referencedIds: Set<ID> = itemGroupIds
 
 }
 
@@ -106,9 +104,8 @@ class ItemGroup private constructor(
     }
 
     // generated
-    override fun getReferencedIds(): Set<ID> {
-        return itemIds
-    }
+    override val referencedIds: Set<ID> = itemIds
+
 }
 
 
@@ -141,9 +138,8 @@ class Item private constructor(
     }
 
     // generated
-    override fun getReferencedIds(): Set<ID> {
-        return setOf()
-    }
+    override val referencedIds: Set<ID> = setOf()
+
 }
 
 class Meta(root: Shop) {

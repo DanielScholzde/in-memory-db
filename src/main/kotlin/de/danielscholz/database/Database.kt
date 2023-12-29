@@ -57,6 +57,7 @@ object Database {
 
 }
 
+
 interface MyContext {
     val snapShot: SnapShot
     val change: Change?
@@ -70,19 +71,20 @@ interface MyContext {
         if (change == null) {
             return referencedByObjectIds.map { it.resolve() }
         }
-        val x = change!!.changed.values.map { it.getReferencedIds() }
+        val x = change!!.changed.values.map { it.referencedIds }
         val result = mutableSetOf<ID>()
         referencedByObjectIds.forEach {
             if (it !in change!!.changed.keys) {
                 result.add(it)
             } else {
-                val referencedIds = change!!.changed[it]!!.getReferencedIds()
+                val referencedIds = change!!.changed[it]!!.referencedIds
                 if (it in referencedIds) result += it
             }
         }
         return result.map { it.resolve() }
     }
 }
+
 
 class Change {
 
@@ -98,6 +100,7 @@ class Change {
 
 }
 
+
 @Serializable
 class SnapShot(
     val version: Long = 0,
@@ -112,7 +115,7 @@ class SnapShot(
 
     init {
         allEntries.values.forEach {
-            it.getReferencedIds().forEach { refId ->
+            it.referencedIds.forEach { refId ->
                 backReferences.put(refId, it.id)
             }
         }
@@ -154,7 +157,7 @@ sealed class Base {
 
     abstract val version: Long
 
-    abstract fun getReferencedIds(): Set<ID>
+    abstract val referencedIds: Set<ID>
 
 
     final override fun equals(other: Any?) = this === other
