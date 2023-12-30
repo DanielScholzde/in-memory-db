@@ -18,12 +18,17 @@ import java.util.concurrent.atomic.AtomicLong
 typealias ID = Long
 
 
-object Database {
+class Database {
 
     @Volatile
     internal var _snapShot: SnapShot = SnapShot(root = Shop(""), changed = persistentSetOf(), parent = null)
 
-    val snapShot: SnapShotContext get() = SnapShotContextImpl(_snapShot)
+
+    fun perform(block: SnapShotContext.() -> Unit) {
+        val context = SnapShotContextImpl(this, _snapShot)
+        context.block()
+    }
+
 
     internal fun writeDiff() = true
 
@@ -37,6 +42,8 @@ object Database {
 
 
 interface SnapShotContext {
+
+    val database: Database
 
     val snapShot: SnapShot
 
@@ -58,7 +65,7 @@ interface ChangeContext : SnapShotContext {
 }
 
 
-class ChangeContextImpl(override val snapShot: SnapShot) : ChangeContext {
+class ChangeContextImpl(override val database: Database, override val snapShot: SnapShot) : ChangeContext {
 
     internal val changed: MutableMap<ID, Base> = mutableMapOf()
 
@@ -76,7 +83,7 @@ class ChangeContextImpl(override val snapShot: SnapShot) : ChangeContext {
 
     override fun Base.getReferencedBy(): Collection<Base> {
         val referencedByObjectIds = snapShot.backReferences[this.id]
-        val x = changed.values.map { it.referencedIds }
+        val x = changed.values.flatMap { it.referencedIds }
         val result = mutableSetOf<ID>()
         referencedByObjectIds.forEach {
             if (it !in changed.keys) {
@@ -85,6 +92,9 @@ class ChangeContextImpl(override val snapShot: SnapShot) : ChangeContext {
                 val referencedIds = changed[it]!!.referencedIds
                 if (it in referencedIds) result += it
             }
+        }
+        x.forEach {
+
         }
         return result.map { it.resolve() }
     }
@@ -95,7 +105,7 @@ class ChangeContextImpl(override val snapShot: SnapShot) : ChangeContext {
 
 }
 
-class SnapShotContextImpl(snapShot: SnapShot) : SnapShotContext {
+class SnapShotContextImpl(override val database: Database, snapShot: SnapShot) : SnapShotContext {
 
     @Volatile
     private var _snapShot: SnapShot = snapShot
@@ -114,7 +124,7 @@ class SnapShotContextImpl(snapShot: SnapShot) : SnapShotContext {
 
     @Synchronized
     override fun update(update: ChangeContext.() -> Unit) {
-        val change = ChangeContextImpl(snapShot)
+        val change = ChangeContextImpl(database, snapShot)
 
         change.update()
 
@@ -123,17 +133,17 @@ class SnapShotContextImpl(snapShot: SnapShot) : SnapShotContext {
             val changedRoot = change.changed[snapShot.root.id]?.let { it as Shop }
             val changedSnapShot = snapShot.copyIntern(changedRoot ?: snapShot.root, change.changed.values)
 
-            if (Database.writeDiff()) {
+            if (database.writeDiff()) {
                 val file = File("database_v${changedSnapShot.version}_diff.json")
-                Files.writeString(file.toPath(), Database.json.encodeToString(Diff(change.changed.values)))
+                Files.writeString(file.toPath(), database.json.encodeToString(Diff(change.changed.values)))
                 println(file.name)
             } else {
                 val file = File("database_v${changedSnapShot.version}_full.json")
-                Files.writeString(file.toPath(), Database.json.encodeToString(changedSnapShot))
+                Files.writeString(file.toPath(), database.json.encodeToString(changedSnapShot))
                 println(file.name)
             }
 
-            Database._snapShot = changedSnapShot
+            database._snapShot = changedSnapShot
             _snapShot = changedSnapShot
         }
     }
