@@ -52,21 +52,21 @@ fun main() {
     database.perform {
         val itemGroup = root.itemGroups().first { it.title == "Deo" }
         println(itemGroup.itemIds)
-        itemGroup.getVersionBefore()?.perform { itemGroupBefore ->
-            println(itemGroupBefore.itemIds)
+        itemGroup.getVersionBefore()?.perform { itemGroupHist1 ->
+            println(itemGroupHist1.itemIds)
         }
 
         val item = itemGroup.itemsSorted().first()
         println("SnapShot.version: ${snapShot.version}")
         println(item.price)
         println(root.title)
-        item.getVersionBefore()?.perform {
+        item.getVersionBefore()?.perform { itemHist1 ->
             println("SnapShot.version: ${snapShot.version}")
-            println(it.price)
-            it.getVersionBefore()?.perform {
+            println(itemHist1.price)
+            itemHist1.getVersionBefore()?.perform { itemHist2 ->
                 println("SnapShot.version: ${snapShot.version}")
-                println(it.price)
-                println(it.getItemGroup().itemIds)
+                println(itemHist2.price)
+                println(itemHist2.getItemGroup().itemIds)
                 println(root.title)
             }
         }
