@@ -39,6 +39,7 @@ class SnapShotContextImpl(override val database: Database, snapShot: SnapShot) :
 
     @Synchronized
     override fun update(update: ChangeContext.() -> Unit) {
+        val snapShot = database.snapShot
         val change = ChangeContextImpl(database, snapShot)
 
         change.update()

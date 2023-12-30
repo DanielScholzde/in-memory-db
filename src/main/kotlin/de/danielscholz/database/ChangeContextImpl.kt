@@ -13,6 +13,7 @@ class ChangeContextImpl(override val database: Database, override val snapShot: 
     override fun <T : Base> T.persist(): T {
         val existing = snapShot.allEntries[this.id]
         if (existing == this) return this
+        if (existing != null && this.version <= existing.version) throw Exception()
         changed[this.id] = this
         return this
     }
