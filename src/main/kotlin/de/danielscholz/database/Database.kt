@@ -16,16 +16,17 @@ import java.nio.file.Files
 import java.util.concurrent.atomic.AtomicLong
 
 typealias ID = Long
+typealias SNAPSHOT_VERSION = Long
 
 
 class Database {
 
     @Volatile
-    internal var _snapShot: SnapShot = SnapShot(root = Shop(""), changed = persistentSetOf(), parent = null)
+    internal var snapShot: SnapShot = SnapShot(root = Shop(""), changed = persistentSetOf(), snapShotHistory = persistentMapOf())
 
 
     fun perform(block: SnapShotContext.() -> Unit) {
-        val context = SnapShotContextImpl(this, _snapShot)
+        val context = SnapShotContextImpl(this, snapShot)
         context.block()
     }
 
@@ -53,6 +54,8 @@ interface SnapShotContext {
 
     fun Base.getReferencedBy(): Collection<Base>
 
+    fun <T : Base> T.getVersionBefore(): Pair<SnapShotContext, T>?
+
     fun update(update: ChangeContext.() -> Unit)
 
 }
@@ -62,6 +65,63 @@ interface ChangeContext : SnapShotContext {
     context(SnapShotContext)
     fun <T : Base> T.persist(): T
 
+}
+
+
+class SnapShotContextImpl(override val database: Database, snapShot: SnapShot) : SnapShotContext {
+
+    @Volatile
+    private var _snapShot: SnapShot = snapShot
+
+    override val snapShot: SnapShot
+        get() = _snapShot
+
+    override val root: Shop get() = snapShot.root
+
+    override fun ID.resolve() = snapShot.allEntries[this] ?: throw Exception()
+
+    override fun Base.getReferencedBy(): Collection<Base> {
+        val referencedByObjectIds = snapShot.backReferences[this.id]
+        return referencedByObjectIds.map { it.resolve() }
+    }
+
+    override fun <T : Base> T.getVersionBefore(): Pair<SnapShotContext, T>? {
+        val snapShot1 = snapShot.snapShotHistory[this.snapShotVersion - 1]
+        val get = snapShot1?.allEntries?.get(this.id)
+        if (get != null) {
+            @Suppress("UNCHECKED_CAST")
+            return SnapShotContextImpl(database, snapShot1) to get as T
+        }
+        return null
+    }
+
+    @Synchronized
+    override fun update(update: ChangeContext.() -> Unit) {
+        val change = ChangeContextImpl(database, snapShot)
+
+        change.update()
+
+        if (change.changed.isNotEmpty()) {
+
+            val map = change.changed.map { it.key to it.value.setSnapShotVersion(snapShot.version + 1) }.toMap()
+
+            val changedRoot = map[snapShot.root.id]?.let { it as Shop }
+            val changedSnapShot = snapShot.copyIntern(changedRoot ?: snapShot.root, map.values)
+
+            if (database.writeDiff()) {
+                val file = File("database_v${changedSnapShot.version}_diff.json")
+                Files.writeString(file.toPath(), database.json.encodeToString(Diff(map.values)))
+                println(file.name)
+            } else {
+                val file = File("database_v${changedSnapShot.version}_full.json")
+                Files.writeString(file.toPath(), database.json.encodeToString(changedSnapShot))
+                println(file.name)
+            }
+
+            database.snapShot = changedSnapShot
+            _snapShot = changedSnapShot
+        }
+    }
 }
 
 
@@ -99,54 +159,14 @@ class ChangeContextImpl(override val database: Database, override val snapShot: 
         return result.map { it.resolve() }
     }
 
+    override fun <T : Base> T.getVersionBefore(): Pair<SnapShotContext, T>? {
+        TODO("Not yet implemented")
+    }
+
     override fun update(update: ChangeContext.() -> Unit) {
         throw Exception()
     }
 
-}
-
-class SnapShotContextImpl(override val database: Database, snapShot: SnapShot) : SnapShotContext {
-
-    @Volatile
-    private var _snapShot: SnapShot = snapShot
-
-    override val snapShot: SnapShot
-        get() = _snapShot
-
-    override val root: Shop get() = snapShot.root
-
-    override fun ID.resolve() = snapShot.allEntries[this] ?: throw Exception()
-
-    override fun Base.getReferencedBy(): Collection<Base> {
-        val referencedByObjectIds = snapShot.backReferences[this.id]
-        return referencedByObjectIds.map { it.resolve() }
-    }
-
-    @Synchronized
-    override fun update(update: ChangeContext.() -> Unit) {
-        val change = ChangeContextImpl(database, snapShot)
-
-        change.update()
-
-        if (change.changed.isNotEmpty()) {
-
-            val changedRoot = change.changed[snapShot.root.id]?.let { it as Shop }
-            val changedSnapShot = snapShot.copyIntern(changedRoot ?: snapShot.root, change.changed.values)
-
-            if (database.writeDiff()) {
-                val file = File("database_v${changedSnapShot.version}_diff.json")
-                Files.writeString(file.toPath(), database.json.encodeToString(Diff(change.changed.values)))
-                println(file.name)
-            } else {
-                val file = File("database_v${changedSnapShot.version}_full.json")
-                Files.writeString(file.toPath(), database.json.encodeToString(changedSnapShot))
-                println(file.name)
-            }
-
-            database._snapShot = changedSnapShot
-            _snapShot = changedSnapShot
-        }
-    }
 }
 
 
@@ -156,7 +176,7 @@ class SnapShot(
     internal val root: Shop,
     internal val allEntries: PersistentMap<ID, Base> = persistentMapOf(),
     val changed: PersistentSet<Base>,
-    val parent: SnapShot?,
+    val snapShotHistory: PersistentMap<SNAPSHOT_VERSION, SnapShot>
 ) {
 
     @Transient
@@ -175,7 +195,13 @@ class SnapShot(
         root: Shop,
         changedEntries: Collection<Base>
     ): SnapShot {
-        return SnapShot(version + 1, root, allEntries.addOrReplace(changedEntries.toList()), changedEntries.toPersistentSet(), this)
+        return SnapShot(
+            version + 1,
+            root,
+            allEntries.addOrReplace(changedEntries.toList()),
+            changedEntries.toPersistentSet(),
+            snapShotHistory.put(version, this)
+        )
     }
 
 }
@@ -197,7 +223,11 @@ sealed class Base {
 
     abstract val version: Long
 
+    abstract val snapShotVersion: SNAPSHOT_VERSION
+
     abstract val referencedIds: Set<ID>
+
+    abstract fun setSnapShotVersion(snapShotVersion: SNAPSHOT_VERSION): Base
 
 
     final override fun equals(other: Any?) = this === other

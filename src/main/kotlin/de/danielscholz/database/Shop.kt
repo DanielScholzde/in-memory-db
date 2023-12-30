@@ -14,14 +14,18 @@ import kotlinx.serialization.UseSerializers
 class Shop private constructor(
     override val id: ID,
     override val version: Long,
+    override val snapShotVersion: SNAPSHOT_VERSION,
     val title: String,
     val itemGroupIds: PersistentSet<ID>,
 ) : Base() {
 
     constructor(
         title: String,
-    ) : this(getNextId(), 0, title, persistentSetOf())
+    ) : this(getNextId(), 0, -1, title, persistentSetOf())
 
+    override fun setSnapShotVersion(snapShotVersion: SNAPSHOT_VERSION): Shop {
+        return Shop(id, version, snapShotVersion, title, itemGroupIds)
+    }
 
     // generated
     context(ChangeContext)
@@ -33,7 +37,7 @@ class Shop private constructor(
     context(ChangeContext)
     private fun changeIntern(title: String = this.title, itemGroupIds: PersistentSet<ID> = this.itemGroupIds): Shop {
         if (title != this.title || itemGroupIds != this.itemGroupIds) {
-            return Shop(id, version + 1, title, itemGroupIds).persist()
+            return Shop(id, version + 1, snapShotVersion, title, itemGroupIds).persist()
         }
         return this
     }
@@ -83,14 +87,18 @@ class Shop private constructor(
 class ItemGroup private constructor(
     override val id: ID,
     override val version: Long,
+    override val snapShotVersion: SNAPSHOT_VERSION,
     val title: String,
     val itemIds: PersistentSet<ID>,
 ) : Base() {
 
     constructor(
         title: String,
-    ) : this(getNextId(), 0, title, persistentSetOf())
+    ) : this(getNextId(), 0, -1, title, persistentSetOf())
 
+    override fun setSnapShotVersion(snapShotVersion: SNAPSHOT_VERSION): ItemGroup {
+        return ItemGroup(id, version, snapShotVersion, title, itemIds)
+    }
 
     // generated
     context(ChangeContext)
@@ -102,7 +110,7 @@ class ItemGroup private constructor(
     context(ChangeContext)
     private fun changeIntern(title: String = this.title, itemIds: PersistentSet<ID> = this.itemIds): ItemGroup {
         if (title != this.title || itemIds != this.itemIds) {
-            return ItemGroup(id, version + 1, title, itemIds).persist()
+            return ItemGroup(id, version + 1, snapShotVersion, title, itemIds).persist()
         }
         return this
     }
@@ -140,6 +148,7 @@ class ItemGroup private constructor(
 class Item private constructor(
     override val id: ID,
     override val version: Long,
+    override val snapShotVersion: SNAPSHOT_VERSION,
     val title: String,
     val price: Double,
 ) : Base() {
@@ -147,7 +156,11 @@ class Item private constructor(
     constructor(
         title: String,
         price: Double,
-    ) : this(getNextId(), 0, title, price)
+    ) : this(getNextId(), 0, -1, title, price)
+
+    override fun setSnapShotVersion(snapShotVersion: SNAPSHOT_VERSION): Item {
+        return Item(id, version, snapShotVersion, title, price)
+    }
 
     // generated
     context(SnapShotContext)
@@ -159,7 +172,7 @@ class Item private constructor(
     context(ChangeContext)
     fun change(title: String = this.title, price: Double = this.price): Item {
         if (title != this.title || price != this.price) {
-            return Item(id, version + 1, title, price).persist()
+            return Item(id, version + 1, snapShotVersion, title, price).persist()
         }
         return this
     }
