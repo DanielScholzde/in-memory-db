@@ -67,6 +67,10 @@ interface ChangeContext : SnapShotContext {
 
 }
 
+fun <T> Pair<SnapShotContext, T>.perform(block: SnapShotContext.(T) -> Unit) {
+    this.first.block(second)
+}
+
 
 class SnapShotContextImpl(override val database: Database, snapShot: SnapShot) : SnapShotContext {
 

@@ -117,6 +117,12 @@ class ItemGroup private constructor(
 
     // generated
     context(SnapShotContext)
+    fun getShop(): Shop {
+        return this.getReferencedBy().filterIsInstance<Shop>().first()
+    }
+
+    // generated
+    context(SnapShotContext)
     fun items(): Collection<Item> {
         return itemIds.map { it.resolve() as Item }
     }
