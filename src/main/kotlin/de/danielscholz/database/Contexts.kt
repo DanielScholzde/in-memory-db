@@ -13,20 +13,16 @@ interface SnapShotContext {
 
     fun Base.getReferencedBy(): Collection<Base>
 
-    fun <T : Base> T.getVersionBefore(): Pair<SnapShotContext, T>?
+    fun <T : Base> T.getVersionBefore(): HistoryEntryContext<T>?
 
     fun update(update: ChangeContext.() -> Unit)
 
 }
+
 
 interface ChangeContext : SnapShotContext {
 
     context(SnapShotContext)
     fun <T : Base> T.persist(): T
 
-}
-
-
-fun <T> Pair<SnapShotContext, T>.perform(block: SnapShotContext.(T) -> Unit) {
-    this.first.block(second)
 }

@@ -19,4 +19,5 @@ class PersistentSetSerializer : KSerializer<PersistentSet<Long>> {
     override fun serialize(encoder: Encoder, value: PersistentSet<Long>) = listSerializer.serialize(encoder, value.toList())
 
     override fun deserialize(decoder: Decoder): PersistentSet<Long> = persistentSetOf<Long>().addAll(listSerializer.deserialize(decoder))
+
 }

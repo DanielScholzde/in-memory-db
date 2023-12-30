@@ -24,6 +24,7 @@ class Shop private constructor(
     ) : this(getNextId(), 0, -1, title, persistentSetOf())
 
     override fun setSnapShotVersion(snapShotVersion: SNAPSHOT_VERSION): Shop {
+        if (this.snapShotVersion != -1L) throw Exception()
         return Shop(id, version, snapShotVersion, title, itemGroupIds)
     }
 
@@ -37,7 +38,7 @@ class Shop private constructor(
     context(ChangeContext)
     private fun changeIntern(title: String = this.title, itemGroupIds: PersistentSet<ID> = this.itemGroupIds): Shop {
         if (title != this.title || itemGroupIds != this.itemGroupIds) {
-            return Shop(id, version + 1, snapShotVersion, title, itemGroupIds).persist()
+            return Shop(id, version + 1, -1, title, itemGroupIds).persist()
         }
         return this
     }
@@ -97,6 +98,7 @@ class ItemGroup private constructor(
     ) : this(getNextId(), 0, -1, title, persistentSetOf())
 
     override fun setSnapShotVersion(snapShotVersion: SNAPSHOT_VERSION): ItemGroup {
+        if (this.snapShotVersion != -1L) throw Exception()
         return ItemGroup(id, version, snapShotVersion, title, itemIds)
     }
 
@@ -110,7 +112,7 @@ class ItemGroup private constructor(
     context(ChangeContext)
     private fun changeIntern(title: String = this.title, itemIds: PersistentSet<ID> = this.itemIds): ItemGroup {
         if (title != this.title || itemIds != this.itemIds) {
-            return ItemGroup(id, version + 1, snapShotVersion, title, itemIds).persist()
+            return ItemGroup(id, version + 1, -1, title, itemIds).persist()
         }
         return this
     }
@@ -165,6 +167,7 @@ class Item private constructor(
     ) : this(getNextId(), 0, -1, title, price)
 
     override fun setSnapShotVersion(snapShotVersion: SNAPSHOT_VERSION): Item {
+        if (this.snapShotVersion != -1L) throw Exception()
         return Item(id, version, snapShotVersion, title, price)
     }
 
@@ -178,7 +181,7 @@ class Item private constructor(
     context(ChangeContext)
     fun change(title: String = this.title, price: Double = this.price): Item {
         if (title != this.title || price != this.price) {
-            return Item(id, version + 1, snapShotVersion, title, price).persist()
+            return Item(id, version + 1, -1, title, price).persist()
         }
         return this
     }

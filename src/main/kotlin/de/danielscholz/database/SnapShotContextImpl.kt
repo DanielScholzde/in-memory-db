@@ -23,12 +23,11 @@ class SnapShotContextImpl(override val database: Database, snapShot: SnapShot) :
         return referencedByObjectIds.map { it.resolve() }
     }
 
-    override fun <T : Base> T.getVersionBefore(): Pair<SnapShotContext, T>? {
+    override fun <T : Base> T.getVersionBefore(): HistoryEntryContext<T>? {
         val snapShot1 = snapShot.snapShotHistory[this.snapShotVersion - 1]
-        val get = snapShot1?.allEntries?.get(this.id)
-        if (get != null) {
+        snapShot1?.allEntries?.get(this.id)?.let {
             @Suppress("UNCHECKED_CAST")
-            return SnapShotContextImpl(database, snapShot1) to get as T
+            return HistoryEntryContext(SnapShotContextImpl(database, snapShot1), it as T)
         }
         return null
     }

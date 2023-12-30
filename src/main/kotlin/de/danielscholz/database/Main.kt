@@ -39,13 +39,18 @@ fun main() {
 
     database.perform {
         update {
-            root.itemGroups().first { it.title == "Deo" }.itemsSorted().first().change(price = 3.99)
+            val item = root.itemGroups().first { it.title == "Deo" }.itemsSorted().first()
+            val changed = item.change(price = 3.99)
+            changed.getVersionBefore()!!.perform {
+                println("Price before: ${it.price}")
+            }
         }
     }
 
     database.perform {
         update {
-            root.itemGroups().first { it.title == "Deo" }.itemsSorted().first().change(price = 3.99) // no change
+            val item = root.itemGroups().first { it.title == "Deo" }.itemsSorted().first()
+            assert(item === item.change(price = 3.99)) // no change
         }
     }
 

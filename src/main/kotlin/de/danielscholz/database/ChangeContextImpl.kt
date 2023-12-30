@@ -35,8 +35,21 @@ class ChangeContextImpl(override val database: Database, override val snapShot: 
         return result.map { it.resolve() }
     }
 
-    override fun <T : Base> T.getVersionBefore(): Pair<SnapShotContext, T>? {
-        TODO("Not yet implemented")
+    override fun <T : Base> T.getVersionBefore(): HistoryEntryContext<T>? {
+        if (changed[this.id] != null) {
+            snapShot.allEntries[this.id]?.let {
+                @Suppress("UNCHECKED_CAST")
+                return HistoryEntryContext(SnapShotContextImpl(database, snapShot), it as T)
+            }
+            return null // entry is new
+        }
+        // copy from SnapShotContextImpl:
+        val snapShot1 = snapShot.snapShotHistory[this.snapShotVersion - 1]
+        snapShot1?.allEntries?.get(this.id)?.let {
+            @Suppress("UNCHECKED_CAST")
+            return HistoryEntryContext(SnapShotContextImpl(database, snapShot1), it as T)
+        }
+        return null
     }
 
     override fun update(update: ChangeContext.() -> Unit) {
