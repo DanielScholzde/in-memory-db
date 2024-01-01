@@ -1,7 +1,8 @@
-package de.danielscholz.database
+package de.danielscholz.database.core
 
 import com.google.common.collect.MultimapBuilder
 import com.google.common.collect.SetMultimap
+import de.danielscholz.database.Shop
 import kotlinx.collections.immutable.PersistentMap
 import kotlinx.collections.immutable.PersistentSet
 import kotlinx.collections.immutable.persistentMapOf

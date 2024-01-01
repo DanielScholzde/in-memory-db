@@ -1,5 +1,8 @@
-package de.danielscholz.database
+package de.danielscholz.database.core
 
+import de.danielscholz.database.Item
+import de.danielscholz.database.ItemGroup
+import de.danielscholz.database.Shop
 import kotlinx.collections.immutable.persistentMapOf
 import kotlinx.collections.immutable.persistentSetOf
 import kotlinx.serialization.json.Json

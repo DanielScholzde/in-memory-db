@@ -1,4 +1,4 @@
-package de.danielscholz.database
+package de.danielscholz.database.serializer
 
 import kotlinx.collections.immutable.PersistentSet
 import kotlinx.collections.immutable.persistentSetOf

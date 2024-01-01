@@ -1,4 +1,4 @@
-package de.danielscholz.database
+package de.danielscholz.database.core
 
 
 class HistoryEntryContext<T : Base>(val snapShotContext: SnapShotContext, val entry: T) {

@@ -1,5 +1,6 @@
-package de.danielscholz.database
+package de.danielscholz.database.core
 
+import de.danielscholz.database.Shop
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import java.io.File

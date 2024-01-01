@@ -1,5 +1,6 @@
 package de.danielscholz.database
 
+import de.danielscholz.database.core.Database
 import io.kotest.matchers.shouldBe
 import org.junit.jupiter.api.Test
 
