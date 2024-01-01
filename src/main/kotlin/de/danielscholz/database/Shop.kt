@@ -23,10 +23,6 @@ class Shop private constructor(
         title: String,
     ) : this(getNextId(), 0, -1, title, persistentSetOf())
 
-    override fun setSnapShotVersion(snapShotVersion: SNAPSHOT_VERSION): Shop {
-        if (this.snapShotVersion != -1L) throw Exception()
-        return Shop(id, version, snapShotVersion, title, itemGroupIds)
-    }
 
     // generated
     context(ChangeContext)
@@ -97,10 +93,6 @@ class ItemGroup private constructor(
         title: String,
     ) : this(getNextId(), 0, -1, title, persistentSetOf())
 
-    override fun setSnapShotVersion(snapShotVersion: SNAPSHOT_VERSION): ItemGroup {
-        if (this.snapShotVersion != -1L) throw Exception()
-        return ItemGroup(id, version, snapShotVersion, title, itemIds)
-    }
 
     // generated
     context(ChangeContext)
@@ -166,10 +158,6 @@ class Item private constructor(
         price: Double,
     ) : this(getNextId(), 0, -1, title, price)
 
-    override fun setSnapShotVersion(snapShotVersion: SNAPSHOT_VERSION): Item {
-        if (this.snapShotVersion != -1L) throw Exception()
-        return Item(id, version, snapShotVersion, title, price)
-    }
 
     // generated
     context(SnapShotContext)
@@ -181,7 +169,7 @@ class Item private constructor(
     context(ChangeContext)
     fun change(title: String = this.title, price: Double = this.price): Item {
         if (title != this.title || price != this.price) {
-            return Item(id, version + 1, -1, title, price).persist()
+            return Item(id, version + 1, nextSnapShotVersion, title, price).persist()
         }
         return this
     }

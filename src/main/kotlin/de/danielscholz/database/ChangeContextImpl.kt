@@ -18,6 +18,9 @@ class ChangeContextImpl(override val database: Database, override val snapShot: 
         return this
     }
 
+    override val nextSnapShotVersion: SNAPSHOT_VERSION
+        get() = snapShot.version + 1
+
     override fun Base.getReferencedBy(): Collection<Base> {
         val referencedByObjectIds = snapShot.backReferences[this.id]
         val x = changed.values.flatMap { it.referencedIds }

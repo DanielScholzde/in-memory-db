@@ -46,14 +46,12 @@ class SnapShotContextImpl(override val database: Database, snapShot: SnapShot) :
 
         if (change.changed.isNotEmpty()) {
 
-            val map = change.changed.map { it.key to it.value.setSnapShotVersion(snapShot.version + 1) }.toMap()
-
-            val changedRoot = map[snapShot.root.id]?.let { it as Shop }
-            val changedSnapShot = snapShot.copyIntern(changedRoot ?: snapShot.root, map.values)
+            val changedRoot = change.changed[snapShot.root.id]?.let { it as Shop }
+            val changedSnapShot = snapShot.copyIntern(changedRoot ?: snapShot.root, change.changed.values)
 
             if (database.writeDiff()) {
                 val file = File("database_v${changedSnapShot.version}_diff.json")
-                Files.writeString(file.toPath(), database.json.encodeToString(Diff(map.values)))
+                Files.writeString(file.toPath(), database.json.encodeToString(Diff(change.changed.values)))
                 println(file.name)
             } else {
                 val file = File("database_v${changedSnapShot.version}_full.json")

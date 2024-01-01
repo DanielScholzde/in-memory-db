@@ -20,8 +20,6 @@ sealed class Base {
 
     abstract val referencedIds: Set<ID>
 
-    abstract fun setSnapShotVersion(snapShotVersion: SNAPSHOT_VERSION): Base
-
 
     final override fun equals(other: Any?) = this === other
 

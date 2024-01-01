@@ -25,4 +25,6 @@ interface ChangeContext : SnapShotContext {
     context(SnapShotContext)
     fun <T : Base> T.persist(): T
 
+    val nextSnapShotVersion: SNAPSHOT_VERSION
+
 }
