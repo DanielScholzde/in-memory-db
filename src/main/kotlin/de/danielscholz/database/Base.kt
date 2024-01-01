@@ -5,7 +5,7 @@ import java.util.concurrent.atomic.AtomicLong
 
 
 @Serializable
-sealed class Base {
+abstract class Base {
 
     companion object {
         private val idGen = AtomicLong()
