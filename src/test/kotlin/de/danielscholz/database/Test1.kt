@@ -3,6 +3,9 @@ package de.danielscholz.database
 import de.danielscholz.database.core.Base
 import de.danielscholz.database.core.Database
 import de.danielscholz.database.core.context.SnapShotContext
+import de.danielscholz.database.demo.Item
+import de.danielscholz.database.demo.ItemGroup
+import de.danielscholz.database.demo.Shop
 import io.kotest.matchers.shouldBe
 import kotlinx.serialization.modules.subclass
 import org.junit.jupiter.api.BeforeEach
@@ -16,12 +19,13 @@ class Test1 {
 
     @BeforeEach
     fun init() {
-        database = Database(Shop.empty()).apply {
+        database = Database("Shop", Shop.empty()).apply {
             addSerializationClasses {
                 subclass(Shop::class)
                 subclass(ItemGroup::class)
                 subclass(Item::class)
             }
+            writeToFile = false
             update {
                 root.change(title = "Shop 1")
                     .addItemGroups(

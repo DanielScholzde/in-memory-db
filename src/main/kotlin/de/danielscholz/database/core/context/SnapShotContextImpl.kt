@@ -62,30 +62,30 @@ class SnapShotContextImpl<ROOT : Base>(override val database: Database<ROOT>, sn
     @Synchronized
     override fun update(update: ChangeContext<ROOT>.() -> Unit) {
         val snapShot = database.snapShot // snapShot may be newer than _snapShot!
-        val change = ChangeContextImpl(database, snapShot)
+        val changeContext = ChangeContextImpl(database, snapShot)
 
-        change.update()
+        changeContext.update()
 
-        if (change.changed.isNotEmpty()) {
+        if (changeContext.changed.isNotEmpty()) {
 
-            val changedRoot = change.changed[snapShot.root.id]?.let {
+            val changedRoot = changeContext.changed[snapShot.root.id]?.let {
                 @Suppress("UNCHECKED_CAST")
                 it as ROOT
             }
-            val changedSnapShot = snapShot.copyIntern(changedRoot ?: snapShot.root, change.changed.values)
+            val changedSnapShot = snapShot.copyIntern(changedRoot ?: snapShot.root, changeContext.changed.values)
 
-            change.changed.forEach {
+            changeContext.changed.forEach {
                 if (it.value.snapShotVersion != changedSnapShot.version) throw Exception()
                 if (it.value.version < 0) throw Exception()
             }
 
             if (database.writeToFile) {
-                if (database.writeDiff()) {
-                    val file = File("database_v${changedSnapShot.version}_diff.json")
-                    Files.writeString(file.toPath(), database.json.encodeToString(Diff(change.changed.values)))
+                if (database.writeDiff(changedSnapShot.version)) {
+                    val file = File("database_${database.name}_v${changedSnapShot.version}_diff.json")
+                    Files.writeString(file.toPath(), database.json.encodeToString(Diff(changeContext.changed.values)))
                     println(file.name)
                 } else {
-                    val file = File("database_v${changedSnapShot.version}_full.json")
+                    val file = File("database_${database.name}_v${changedSnapShot.version}_full.json")
                     Files.writeString(file.toPath(), database.json.encodeToString(changedSnapShot))
                     println(file.name)
                 }
