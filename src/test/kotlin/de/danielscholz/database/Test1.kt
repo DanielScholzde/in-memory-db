@@ -3,7 +3,7 @@ package de.danielscholz.database
 import de.danielscholz.database.core.Base
 import de.danielscholz.database.core.Database
 import de.danielscholz.database.core.context.Reference
-import de.danielscholz.database.core.context.SnapShotContext
+import de.danielscholz.database.core.util.withEach
 import de.danielscholz.database.demo.Item
 import de.danielscholz.database.demo.ItemGroup
 import de.danielscholz.database.demo.Shop
@@ -19,6 +19,7 @@ class Test1 {
     private lateinit var database: Database<Shop>
 
     private lateinit var soap: Reference<Shop, Item>
+    private lateinit var group1: Reference<Shop, ItemGroup>
 
 
     @BeforeEach
@@ -32,23 +33,20 @@ class Test1 {
             writeToFile = false
             update {
                 val soap = Item.of(title = "Soap", price = 1.79)
+                val group1 = ItemGroup.of(title = "Group1")
                 root.change(title = "Shop 1")
                     .addItemGroups(
                         setOf(
-                            ItemGroup.of(title = "Group1")
+                            group1
                                 .addItem(soap),
                             ItemGroup.of(title = "Group2")
                                 .addItem(Item.of(title = "Melon", price = 0.99))
                         )
                     )
                 this@Test1.soap = soap.asRef()
+                this@Test1.group1 = group1.asRef()
             }
         }
-    }
-
-    context(SnapShotContext<Shop>)
-    private fun Shop.getItemGroup1(): ItemGroup {
-        return itemGroups().first { it.title == "Group1" }
     }
 
 
@@ -57,10 +55,10 @@ class Test1 {
         database.perform {
             update {
                 val item = Item.of(title = "Milk", price = 1.29)
-                val updated = root.getItemGroup1().addItem(item)
+                val updated = group1.resolve().addItem(item)
                 item.getItemGroup() shouldBe updated
             }
-            root.getItemGroup1().items().first { it.title == "Milk" }.getItemGroup() shouldBe root.getItemGroup1()
+            group1.resolve().items().first { it.title == "Milk" }.getItemGroup() shouldBe group1.resolve()
         }
     }
 
@@ -113,7 +111,7 @@ class Test1 {
     fun test15() {
         database.update {
             val milk = Item.of(title = "Milk", price = 1.29)
-            root.getItemGroup1().addItem(milk)
+            group1.resolve().addItem(milk)
         }
         database.update {
             root.change(title = "My Shop")
@@ -127,7 +125,7 @@ class Test1 {
         }
 
         database.perform {
-            val itemGroup = root.getItemGroup1()
+            val itemGroup = group1.resolve()
             itemGroup.itemIds.size shouldBe 2
             itemGroup.getVersionBefore()!!.perform { itemGroupHist1 ->
                 itemGroupHist1.print("1: ").snapShotVersion shouldBe 1
@@ -149,6 +147,13 @@ class Test1 {
                     root.print().title shouldBe "Shop 1"
                 }
             }
+
+            soap.resolve().getVersionsBefore().withEach {
+                perform {
+                    println(it.price)
+                    println(it.getItemGroup().getShop().title)
+                }
+            }
         }
     }
 
@@ -158,7 +163,7 @@ class Test1 {
         try {
             measureTime {
                 database.update {
-                    root.getItemGroup1().addItems(
+                    group1.resolve().addItems(
                         (1..10_000).map { Item.of("Test $it", it.toDouble()) }.toSet()
                     )
                 }
@@ -168,7 +173,7 @@ class Test1 {
 
             measureTime {
                 database.update {
-                    root.getItemGroup1().addItem(Item.of("Test ABC", 1.99))
+                    group1.resolve().addItem(Item.of("Test ABC", 1.99))
                 }
             }.let { duration ->
                 println("Insert 1 Item: $duration")
@@ -177,7 +182,7 @@ class Test1 {
             (1..100).forEach {
                 measureTime {
                     database.perform {
-                        root.getItemGroup1().items()
+                        group1.resolve().items()
                     }
                 }.let { duration ->
                     if (it == 100) {

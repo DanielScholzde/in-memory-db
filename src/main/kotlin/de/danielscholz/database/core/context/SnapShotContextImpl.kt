@@ -41,7 +41,7 @@ class SnapShotContextImpl<ROOT : Base>(override val database: Database<ROOT>, sn
     override val root: ROOT get() = snapShot.root
 
 
-    override fun ID.resolve() = snapShot.allEntries[this] ?: throw Exception()
+    override fun ID.resolve() = snapShot.allEntries[this] ?: throw Exception("Entry could not be found!")
 
 
     override fun Base.getReferencedBy(): Collection<Base> {

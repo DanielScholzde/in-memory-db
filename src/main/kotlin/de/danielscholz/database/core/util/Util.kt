@@ -10,3 +10,9 @@ fun <T : Base> PersistentMap<Long, T>.addOrReplace(entries: List<T>): Persistent
     return this.putAll(entries.associateBy { it.id })
 }
 
+
+inline fun <T> Iterable<T>.withEach(block: T.() -> Unit) {
+    this.forEach {
+        it.block()
+    }
+}
