@@ -13,18 +13,13 @@ class ChangeContextImpl<ROOT : Base>(override val database: Database<ROOT>, over
 
     override fun ID.resolve() = changed[this] ?: snapShot.allEntries[this] ?: throw Exception()
 
-    context(SnapShotContext<ROOT>)
+    context(ChangeContext<ROOT>)
     override fun <T : Base> T.persist(): T {
         val existing = snapShot.allEntries[this.id]
         if (existing == this) return this
         if (existing != null && this.version <= existing.version) throw Exception()
-        var entry = this
-        if (this.snapShotVersion != nextSnapShotVersion) {
-            @Suppress("UNCHECKED_CAST")
-            entry = entry.setSnapShotVersion(nextSnapShotVersion) as T
-        }
-        changed[entry.id] = entry
-        return entry
+        changed[this.id] = this
+        return this
     }
 
     override val nextSnapShotVersion: SNAPSHOT_VERSION

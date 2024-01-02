@@ -1,5 +1,6 @@
 package de.danielscholz.database
 
+import de.danielscholz.database.core.Base
 import de.danielscholz.database.core.Database
 import de.danielscholz.database.core.SnapShotContext
 import io.kotest.matchers.shouldBe
@@ -13,16 +14,16 @@ class Test1 {
 
     @BeforeEach
     fun init() {
-        database = Database(Shop("")).apply {
+        database = Database(Shop.empty()).apply {
             perform {
                 update {
                     root.change(title = "Shop 1")
                         .addItemGroups(
                             setOf(
-                                ItemGroup(title = "Group1")
-                                    .addItem(Item(title = "Soap", price = 1.79)),
-                                ItemGroup(title = "Group2")
-                                    .addItem(Item(title = "Melon", price = 0.99))
+                                ItemGroup.of(title = "Group1")
+                                    .addItem(Item.of(title = "Soap", price = 1.79)),
+                                ItemGroup.of(title = "Group2")
+                                    .addItem(Item.of(title = "Melon", price = 0.99))
                             )
                         )
                 }
@@ -43,7 +44,7 @@ class Test1 {
     private fun makeUpdates() {
         database.perform {
             update {
-                root.getItemGroup1().addItem(Item(title = "Milk", price = 1.29))
+                root.getItemGroup1().addItem(Item.of(title = "Milk", price = 1.29))
             }
         }
 
@@ -71,7 +72,7 @@ class Test1 {
     fun test11() {
         database.perform {
             update {
-                val item = Item(title = "Milk", price = 1.29)
+                val item = Item.of(title = "Milk", price = 1.29)
                 val updated = root.getItemGroup1().addItem(item)
                 assert(item.getItemGroup() == updated)
             }
@@ -131,8 +132,8 @@ class Test1 {
         database.perform {
             val itemGroup = root.getItemGroup1()
             itemGroup.itemIds.size shouldBe 2
-            itemGroup.getVersionBefore()?.perform { itemGroupHist1 ->
-                println(itemGroupHist1)
+            itemGroup.getVersionBefore()!!.perform { itemGroupHist1 ->
+                //println(itemGroupHist1)
                 itemGroupHist1.itemIds.size shouldBe 1
             }
 
@@ -140,17 +141,22 @@ class Test1 {
             println("SnapShot.version: ${snapShot.version}")
             item.price shouldBe 3.99
             root.title shouldBe "My Shop"
-            item.getVersionBefore()?.perform { itemHist1 ->
+            item.getVersionBefore()!!.perform { itemHist1 ->
                 println("SnapShot.version: ${snapShot.version}")
                 itemHist1.price shouldBe 2.99
-                itemHist1.getVersionBefore()?.perform { itemHist2 ->
+                itemHist1.getVersionBefore()!!.perform { itemHist2 ->
                     println("SnapShot.version: ${snapShot.version}")
                     itemHist2.price shouldBe 1.79
-                    itemHist2.getItemGroup().itemIds.size shouldBe 1
+                    itemHist2.getItemGroup().print().itemIds.size shouldBe 1
                     root.title shouldBe "Shop 1"
                 }
             }
         }
     }
 
+
+    private fun <T : Base> T.print(): T {
+        println(this)
+        return this
+    }
 }

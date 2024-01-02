@@ -39,8 +39,8 @@ class SnapShotContextImpl<ROOT : Base>(override val database: Database<ROOT>, sn
 
     @Synchronized
     override fun update(update: ChangeContext<ROOT>.() -> Unit) {
-        val snapShot = database.snapShot
-        val change = ChangeContextImpl<ROOT>(database, snapShot)
+        val snapShot = database.snapShot // snapShot may be newer than _snapShot!
+        val change = ChangeContextImpl(database, snapShot)
 
         change.update()
 
@@ -51,6 +51,11 @@ class SnapShotContextImpl<ROOT : Base>(override val database: Database<ROOT>, sn
                 it as ROOT
             }
             val changedSnapShot = snapShot.copyIntern(changedRoot ?: snapShot.root, change.changed.values)
+
+            change.changed.forEach {
+                if (it.value.snapShotVersion != changedSnapShot.version) throw Exception()
+                if (it.value.version < 0) throw Exception()
+            }
 
             if (database.writeDiff()) {
                 val file = File("database_v${changedSnapShot.version}_diff.json")

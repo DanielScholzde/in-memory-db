@@ -18,8 +18,6 @@ abstract class Base {
 
     abstract val snapShotVersion: SNAPSHOT_VERSION
 
-    abstract fun setSnapShotVersion(snapShotVersion: SNAPSHOT_VERSION): Base
-
     abstract val referencedIds: Set<ID>
 
 

@@ -25,13 +25,11 @@ class Shop private constructor(
     val itemGroupIds: PersistentSet<ID>,
 ) : Base() {
 
-    constructor(
-        title: String,
-    ) : this(getNextId(), 0, -1, title, persistentSetOf())
-
-    override fun setSnapShotVersion(snapShotVersion: SNAPSHOT_VERSION): Shop {
-        if (this.snapShotVersion != -1L) throw Exception()
-        return Shop(id, version, snapShotVersion, title, itemGroupIds)
+    companion object {
+        // generated
+        fun empty(): Shop {
+            return Shop(getNextId(), 0, 0, "", persistentSetOf())
+        }
     }
 
     // generated
@@ -105,13 +103,12 @@ class ItemGroup private constructor(
     val itemIds: PersistentSet<ID>,
 ) : Base() {
 
-    constructor(
-        title: String,
-    ) : this(getNextId(), 0, -1, title, persistentSetOf())
-
-    override fun setSnapShotVersion(snapShotVersion: SNAPSHOT_VERSION): ItemGroup {
-        if (this.snapShotVersion != -1L) throw Exception()
-        return ItemGroup(id, version, snapShotVersion, title, itemIds)
+    companion object {
+        // generated
+        context(ChangeContext<Shop>)
+        fun of(title: String): ItemGroup {
+            return ItemGroup(getNextId(), 0, nextSnapShotVersion, title, persistentSetOf())
+        }
     }
 
     // generated
@@ -178,14 +175,12 @@ class Item private constructor(
     val price: Double,
 ) : Base() {
 
-    constructor(
-        title: String,
-        price: Double,
-    ) : this(getNextId(), 0, -1, title, price)
-
-    override fun setSnapShotVersion(snapShotVersion: SNAPSHOT_VERSION): Item {
-        if (this.snapShotVersion != -1L) throw Exception()
-        return Item(id, version, snapShotVersion, title, price)
+    companion object {
+        // generated
+        context(ChangeContext<Shop>)
+        fun of(title: String, price: Double): Item {
+            return Item(getNextId(), 0, nextSnapShotVersion, title, price)
+        }
     }
 
     // generated
