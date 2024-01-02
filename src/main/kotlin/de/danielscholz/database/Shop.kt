@@ -89,7 +89,6 @@ class Shop private constructor(
     // generated
     override val referencedIds get() = itemGroupIds
 
-
 }
 
 

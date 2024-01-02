@@ -39,10 +39,7 @@ class Test1 {
         return getItemGroup1().items().first { it.title == "Soap" }
     }
 
-    context(SnapShotContext<Shop>)
-    private fun Shop.getItemMilk(): Item {
-        return getItemGroup1().items().first { it.title == "Milk" }
-    }
+
 
     @Test
     fun test11() {
@@ -52,7 +49,7 @@ class Test1 {
                 val updated = root.getItemGroup1().addItem(item)
                 item.getItemGroup() shouldBe updated
             }
-            root.getItemMilk().getItemGroup() shouldBe root.getItemGroup1()
+            root.getItemGroup1().items().first { it.title == "Milk" }.getItemGroup() shouldBe root.getItemGroup1()
         }
     }
 
@@ -103,21 +100,16 @@ class Test1 {
 
     @Test
     fun test15() {
-
         database.update {
             root.getItemGroup1().addItem(Item.of(title = "Milk", price = 1.29))
         }
-
         database.update {
             root.change(title = "My Shop")
             root.getItemSoap().change(price = 2.99)
         }
-
         database.update {
             root.getItemSoap().change(price = 3.99)
         }
-
-
         database.update {
             root.getItemSoap().change(price = 3.99) // no change
         }
