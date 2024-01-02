@@ -41,7 +41,7 @@ class ChangeContextImpl<ROOT : Base>(override val database: Database<ROOT>, over
         get() = snapShot.version + 1
 
     override fun Base.checkIsCurrent() {
-        if (this.asRef().resolve() != this) throw Exception()
+        if (this.asRef().get() != this) throw Exception()
     }
 
 

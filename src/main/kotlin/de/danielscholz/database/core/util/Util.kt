@@ -1,6 +1,8 @@
 package de.danielscholz.database.core.util
 
 import de.danielscholz.database.core.Base
+import de.danielscholz.database.core.context.HistoryEntryContext
+import de.danielscholz.database.core.context.SnapShotContext
 import kotlinx.collections.immutable.PersistentMap
 
 
@@ -11,8 +13,15 @@ fun <T : Base> PersistentMap<Long, T>.addOrReplace(entries: List<T>): Persistent
 }
 
 
-inline fun <T> Iterable<T>.withEach(block: T.() -> Unit) {
+fun <T> Iterable<T>.withEach(block: T.() -> Unit) {
     this.forEach {
         it.block()
+    }
+}
+
+
+fun <ROOT : Base, T : Base> List<HistoryEntryContext<T, ROOT>>.performEach(block: SnapShotContext<ROOT>.(T) -> Unit) {
+    this.forEach {
+        it.perform(block)
     }
 }

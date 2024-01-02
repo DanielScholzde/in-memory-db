@@ -74,21 +74,19 @@
 
     // change price of milk:
     database.update {
-        milk.resolve().change(price = 3.99)
+        milk.get().change(price = 3.99)
     }
 
     // get price of milk before last change:
     database.perform {
-        milk.resolve().getVersionBefore()?.perform { milkHist ->
+        milk.get().getVersionBefore()?.perform { milkHist ->
             println(milkHist.price) // 1.29
         }
     }
 
     // get all milk history changes:
     database.perform {
-        milk.resolve().getVersionsBefore().withEach {
-            perform { milkHist ->
-                println(milkHist.price)
-            }
+        milk.get().getVersionsBefore().performEach { milkHist ->
+            println(milkHist.price)
         }
     }

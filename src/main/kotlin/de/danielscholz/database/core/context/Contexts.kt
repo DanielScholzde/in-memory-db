@@ -25,16 +25,17 @@ interface SnapShotContext<ROOT : Base> {
 
     fun <T : Base> T.getVersionsBefore(): List<HistoryEntryContext<T, ROOT>> {
         val result = mutableListOf<HistoryEntryContext<T, ROOT>>()
-        var context = this@SnapShotContext
-        var entry = this
-        while (true) {
-            with(context) {
-                entry.getVersionBefore()
-            }?.let { versionBefore ->
-                result += versionBefore
-                context = versionBefore.snapShotContext
-                entry = versionBefore.entry
-            } ?: break
+        this.getVersionBefore()?.let {
+            result += it
+            var context = it
+            while (true) {
+                context.perform { entry ->
+                    entry.getVersionBefore()?.also { context1 ->
+                        result += context1
+                        context = context1
+                    }
+                } ?: break
+            }
         }
         return result
     }
