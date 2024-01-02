@@ -4,7 +4,7 @@ import de.danielscholz.database.core.context.ChangeContext
 import de.danielscholz.database.core.context.Diff
 import de.danielscholz.database.core.context.SnapShotContext
 import de.danielscholz.database.core.context.SnapShotContextImpl
-import de.danielscholz.database.core.context.toSerializable
+import de.danielscholz.database.core.context.toFullSerialization
 import kotlinx.collections.immutable.toPersistentSet
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -48,12 +48,19 @@ class Database<ROOT : Base>(val name: String, private val root: ROOT) {
         }
     }
 
+    fun writeFullSnapShot() {
+        val snapShot1 = snapShot
+        val file = File("database_${name}_v${snapShot1.version}_full.json")
+        Files.writeString(file.toPath(), json.encodeToString(snapShot1.toFullSerialization()))
+        println(file.name)
+    }
+
     fun clearHistory() {
         makeChange {
             snapShot = snapShot.clearHistory()
             if (writeToFile) {
                 val file = File("database_${name}_v${snapShot.version}_full.json")
-                Files.writeString(file.toPath(), json.encodeToString(snapShot.toSerializable()))
+                Files.writeString(file.toPath(), json.encodeToString(snapShot.toFullSerialization()))
                 println(file.name)
             }
         }
@@ -76,6 +83,7 @@ class Database<ROOT : Base>(val name: String, private val root: ROOT) {
 
                 SnapShot(
                     version,
+                    snapShot1.time,
                     snapShot1.rootId,
                     allEntries,
                     diff.changed.toPersistentSet(),

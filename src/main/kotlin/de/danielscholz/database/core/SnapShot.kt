@@ -11,11 +11,14 @@ import kotlinx.collections.immutable.PersistentSet
 import kotlinx.collections.immutable.persistentMapOf
 import kotlinx.collections.immutable.persistentSetOf
 import kotlinx.collections.immutable.toPersistentSet
+import kotlinx.datetime.Clock
+import kotlinx.datetime.Instant
 import kotlinx.serialization.UseSerializers
 
 
 class SnapShot<ROOT : Base> internal constructor(
     val version: Long,
+    val time: Instant,
     internal val rootId: ID,
     internal val allEntries: PersistentMap<ID, Base>,
     internal val changed: PersistentSet<Base>,
@@ -26,6 +29,7 @@ class SnapShot<ROOT : Base> internal constructor(
         fun <ROOT : Base> init(root: ROOT): SnapShot<ROOT> {
             return SnapShot(
                 rootId = root.id,
+                time = Clock.System.now(),
                 version = 0,
                 changed = persistentSetOf(root),
                 allEntries = persistentMapOf(root.id to root),
@@ -52,6 +56,7 @@ class SnapShot<ROOT : Base> internal constructor(
     ): SnapShot<ROOT> {
         return SnapShot(
             version + 1,
+            Clock.System.now(),
             rootId,
             allEntries.addOrReplace(changedEntries.toList()),
             changedEntries.toPersistentSet(),
@@ -62,6 +67,7 @@ class SnapShot<ROOT : Base> internal constructor(
     internal fun clearHistory(): SnapShot<ROOT> {
         return SnapShot(
             version,
+            time,
             rootId,
             allEntries,
             persistentSetOf(),
