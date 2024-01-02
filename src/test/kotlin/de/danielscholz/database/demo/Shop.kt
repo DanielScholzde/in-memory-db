@@ -28,7 +28,7 @@ class Shop private constructor(
     companion object {
         // generated
         fun empty(): Shop {
-            return Shop(getNextId(), 0, 0, "", persistentSetOf())
+            return Shop(1, 0, 0, "", persistentSetOf())
         }
     }
 

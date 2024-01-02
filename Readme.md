@@ -49,18 +49,19 @@
             subclass(ItemGroup::class)
             subclass(Item::class)
         }
-        // make first change
-        update {
-            root.change(title = "Shop 1")
-                .addItemGroups(
-                    setOf(
-                        ItemGroup.of(title = "Group1")
-                            .addItem(Item.of(title = "Soap", price = 1.79)),
-                        ItemGroup.of(title = "Group2")
-                            .addItem(Item.of(title = "Melon", price = 0.99))
-                    )
+    }
+
+    // make first change
+    database.update {
+        root.change(title = "Shop 1")
+            .addItemGroups(
+                setOf(
+                    ItemGroup.of(title = "Group1")
+                        .addItem(Item.of(title = "Soap", price = 1.79)),
+                    ItemGroup.of(title = "Group2")
+                        .addItem(Item.of(title = "Melon", price = 0.99))
                 )
-        }
+            )
     }
 
     // add Item:

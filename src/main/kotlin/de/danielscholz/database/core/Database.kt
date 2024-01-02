@@ -11,6 +11,7 @@ import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.polymorphic
 import java.io.File
 import java.nio.file.Files
+import java.util.concurrent.atomic.AtomicLong
 import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.InvocationKind
 import kotlin.contracts.contract
@@ -19,10 +20,14 @@ typealias ID = Long
 typealias SNAPSHOT_VERSION = Long
 
 
-class Database<ROOT : Base>(val name: String, private val init: ROOT) {
+class Database<ROOT : Base>(val name: String, private val root: ROOT) {
+
+    private val idGen = AtomicLong(root.id) // global unique? or database unique?
+
+    fun getNextId() = idGen.incrementAndGet()
 
     @Volatile
-    internal var snapShot: SnapShot<ROOT> = SnapShot.init(init) // TODO private set
+    internal var snapShot: SnapShot<ROOT> = SnapShot.init(root) // TODO private set
 
 
     @OptIn(ExperimentalContracts::class)
@@ -56,7 +61,7 @@ class Database<ROOT : Base>(val name: String, private val init: ROOT) {
             .filter { it.name.startsWith("database_${name}_v") && it.name.endsWith("_diff.json") }
             .map { it to it.name.removePrefix("database_${name}_v").removeSuffix("_diff.json").toLong() }
             .sortedBy { it.second }
-            .fold(SnapShot.init(init)) { snapShot1, (file, version) ->
+            .fold(SnapShot.init(root)) { snapShot1, (file, version) ->
                 val diff = json.decodeFromString<SnapShotContextImpl.Diff>(Files.readString(file.toPath()))
 
                 val allEntries = snapShot1.allEntries.putAll(diff.changed.associateBy { it.id })
@@ -70,7 +75,7 @@ class Database<ROOT : Base>(val name: String, private val init: ROOT) {
                 )
             }
 
-        Base.setMaxAssignedId(snapShot1.allEntries.maxOf { it.value.id })
+        idGen.set(snapShot1.allEntries.maxOf { it.value.id })
         snapShot = snapShot1
     }
 
@@ -88,7 +93,7 @@ class Database<ROOT : Base>(val name: String, private val init: ROOT) {
 
     private fun JsonBuilder.initJson() {
         encodeDefaults = true
-        //prettyPrint = true
+        prettyPrint = true
     }
 
     fun addSerializationClasses(block: PolymorphicModuleBuilder<Base>.() -> Unit) {

@@ -28,7 +28,7 @@ class Item private constructor(
         // generated
         context(ChangeContext<Shop>)
         fun of(title: String, price: Double): Item {
-            return Item(getNextId(), 0, nextSnapShotVersion, title, price).persist()
+            return Item(database.getNextId(), 0, nextSnapShotVersion, title, price).persist()
         }
     }
 

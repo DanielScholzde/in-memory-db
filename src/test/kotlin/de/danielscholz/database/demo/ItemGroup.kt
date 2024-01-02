@@ -29,7 +29,7 @@ class ItemGroup private constructor(
         // generated
         context(ChangeContext<Shop>)
         fun of(title: String): ItemGroup {
-            return ItemGroup(getNextId(), 0, nextSnapShotVersion, title, persistentSetOf()).persist()
+            return ItemGroup(database.getNextId(), 0, nextSnapShotVersion, title, persistentSetOf()).persist()
         }
     }
 
