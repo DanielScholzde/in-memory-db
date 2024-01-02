@@ -9,8 +9,11 @@ import java.util.concurrent.atomic.AtomicLong
 abstract class Base {
 
     companion object {
+
         private val idGen = AtomicLong() // global unique? or database unique?
+
         fun getNextId() = idGen.incrementAndGet()
+
         internal fun setMaxAssignedId(id: Long) = idGen.set(id)
     }
 

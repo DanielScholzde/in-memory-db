@@ -61,10 +61,9 @@ class Database<ROOT : Base>(val name: String, private val init: ROOT) {
 
                 val allEntries = snapShot1.allEntries.putAll(diff.changed.associateBy { it.id })
 
-                @Suppress("UNCHECKED_CAST")
                 SnapShot(
                     version,
-                    allEntries[snapShot1.root.id] as ROOT,
+                    snapShot1.rootId,
                     allEntries,
                     diff.changed.toPersistentSet(),
                     snapShot1.snapShotHistory.put(version - 1, snapShot1)

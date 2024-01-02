@@ -12,11 +12,9 @@ class ChangeContextImpl<ROOT : Base>(override val database: Database<ROOT>, over
     internal val changed: MutableMap<ID, Base> = mutableMapOf()
 
 
+    @Suppress("UNCHECKED_CAST")
     override val root: ROOT
-        get() = changed[snapShot.root.id]?.let {
-            @Suppress("UNCHECKED_CAST")
-            it as ROOT
-        } ?: snapShot.root
+        get() = snapShot.rootId.resolve() as ROOT
 
 
     override fun ID.resolve() = changed[this] ?: snapShot.allEntries[this] ?: throw Exception()

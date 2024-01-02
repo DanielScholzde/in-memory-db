@@ -15,7 +15,7 @@ import kotlinx.serialization.Transient
 @Serializable
 class SnapShot<ROOT : Base> internal constructor(
     val version: Long,
-    internal val root: ROOT,
+    internal val rootId: ID,
     internal val allEntries: PersistentMap<ID, Base>,
     internal val changed: PersistentSet<Base>,
     internal val snapShotHistory: PersistentMap<SNAPSHOT_VERSION, SnapShot<ROOT>>
@@ -24,7 +24,7 @@ class SnapShot<ROOT : Base> internal constructor(
     companion object {
         fun <ROOT : Base> init(root: ROOT): SnapShot<ROOT> {
             return SnapShot(
-                root = root,
+                rootId = root.id,
                 version = 0,
                 changed = persistentSetOf(root),
                 allEntries = persistentMapOf(root.id to root),
@@ -47,12 +47,12 @@ class SnapShot<ROOT : Base> internal constructor(
 
 
     internal fun copyIntern(
-        root: ROOT,
+        rootId: ID,
         changedEntries: Collection<Base>
     ): SnapShot<ROOT> {
         return SnapShot(
             version + 1,
-            root,
+            rootId,
             allEntries.addOrReplace(changedEntries.toList()),
             changedEntries.toPersistentSet(),
             snapShotHistory.put(version, this)
@@ -62,7 +62,7 @@ class SnapShot<ROOT : Base> internal constructor(
     internal fun clearHistory(): SnapShot<ROOT> {
         return SnapShot(
             version,
-            root,
+            rootId,
             allEntries,
             persistentSetOf(),
             persistentMapOf()

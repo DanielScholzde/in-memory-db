@@ -38,7 +38,8 @@ class SnapShotContextImpl<ROOT : Base>(override val database: Database<ROOT>, sn
     override val snapShot: SnapShot<ROOT>
         get() = _snapShot
 
-    override val root: ROOT get() = snapShot.root
+    @Suppress("UNCHECKED_CAST")
+    override val root: ROOT get() = snapShot.rootId.resolve() as ROOT
 
 
     override fun ID.resolve() = snapShot.allEntries[this] ?: throw Exception("Entry could not be found!")
@@ -72,11 +73,7 @@ class SnapShotContextImpl<ROOT : Base>(override val database: Database<ROOT>, sn
 
             if (changeContext.changed.isNotEmpty()) {
 
-                val changedRoot = changeContext.changed[snapShot.root.id]?.let {
-                    @Suppress("UNCHECKED_CAST")
-                    it as ROOT
-                }
-                val changedSnapShot = snapShot.copyIntern(changedRoot ?: snapShot.root, changeContext.changed.values)
+                val changedSnapShot = snapShot.copyIntern(snapShot.rootId, changeContext.changed.values)
 
                 changeContext.changed.forEach {
                     if (it.value.snapShotVersion != changedSnapShot.version) throw Exception()
