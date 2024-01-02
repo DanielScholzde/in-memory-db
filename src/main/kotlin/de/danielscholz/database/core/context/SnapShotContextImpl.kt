@@ -31,6 +31,7 @@ class SnapShotContextImpl<ROOT : Base>(override val database: Database<ROOT>, sn
         }
     }
 
+
     @Volatile
     private var _snapShot: SnapShot<ROOT> = snapShot
 
@@ -39,12 +40,15 @@ class SnapShotContextImpl<ROOT : Base>(override val database: Database<ROOT>, sn
 
     override val root: ROOT get() = snapShot.root
 
+
     override fun ID.resolve() = snapShot.allEntries[this] ?: throw Exception()
+
 
     override fun Base.getReferencedBy(): Collection<Base> {
         val referencedByObjectIds = snapShot.backReferences[this.id]
         return referencedByObjectIds.map { it.resolve() }
     }
+
 
     override fun <T : Base> T.getVersionBefore(): HistoryEntryContext<T, ROOT>? {
         return getVersionBefore(this, snapShot, database)

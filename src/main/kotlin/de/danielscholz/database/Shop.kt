@@ -204,7 +204,7 @@ class Item private constructor(
     }
 
     // generated
-    override val referencedIds get() = setOf<ID>()
+    override val referencedIds get() = persistentSetOf<ID>()
 
 }
 

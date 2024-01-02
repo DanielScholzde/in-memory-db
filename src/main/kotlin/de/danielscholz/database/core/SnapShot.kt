@@ -17,8 +17,8 @@ class SnapShot<ROOT : Base> private constructor(
     val version: Long,
     internal val root: ROOT,
     internal val allEntries: PersistentMap<ID, Base>,
-    val changed: PersistentSet<Base>,
-    val snapShotHistory: PersistentMap<SNAPSHOT_VERSION, SnapShot<ROOT>>
+    internal val changed: PersistentSet<Base>,
+    internal val snapShotHistory: PersistentMap<SNAPSHOT_VERSION, SnapShot<ROOT>>
 ) {
 
     companion object {

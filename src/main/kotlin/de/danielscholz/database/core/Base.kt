@@ -1,5 +1,6 @@
 package de.danielscholz.database.core
 
+import kotlinx.collections.immutable.ImmutableSet
 import kotlinx.serialization.Serializable
 import java.util.concurrent.atomic.AtomicLong
 
@@ -18,7 +19,7 @@ abstract class Base {
 
     abstract val snapShotVersion: SNAPSHOT_VERSION
 
-    abstract val referencedIds: Set<ID>
+    abstract val referencedIds: ImmutableSet<ID>
 
 
     final override fun equals(other: Any?) = this === other

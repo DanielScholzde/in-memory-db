@@ -3,6 +3,7 @@ package de.danielscholz.database.core
 import de.danielscholz.database.Item
 import de.danielscholz.database.ItemGroup
 import de.danielscholz.database.Shop
+import de.danielscholz.database.core.context.ChangeContext
 import de.danielscholz.database.core.context.SnapShotContext
 import de.danielscholz.database.core.context.SnapShotContextImpl
 import kotlinx.serialization.json.Json
@@ -23,6 +24,12 @@ class Database<ROOT : Base>(init: ROOT) {
     fun perform(block: SnapShotContext<ROOT>.() -> Unit) {
         val context = SnapShotContextImpl(this, snapShot)
         context.block()
+    }
+
+    fun update(block: ChangeContext<ROOT>.() -> Unit) {
+        perform {
+            update(block)
+        }
     }
 
 

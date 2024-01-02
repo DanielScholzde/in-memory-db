@@ -15,18 +15,16 @@ class Test1 {
     @BeforeEach
     fun init() {
         database = Database(Shop.empty()).apply {
-            perform {
-                update {
-                    root.change(title = "Shop 1")
-                        .addItemGroups(
-                            setOf(
-                                ItemGroup.of(title = "Group1")
-                                    .addItem(Item.of(title = "Soap", price = 1.79)),
-                                ItemGroup.of(title = "Group2")
-                                    .addItem(Item.of(title = "Melon", price = 0.99))
-                            )
+            update {
+                root.change(title = "Shop 1")
+                    .addItemGroups(
+                        setOf(
+                            ItemGroup.of(title = "Group1")
+                                .addItem(Item.of(title = "Soap", price = 1.79)),
+                            ItemGroup.of(title = "Group2")
+                                .addItem(Item.of(title = "Melon", price = 0.99))
                         )
-                }
+                    )
             }
         }
     }
@@ -106,26 +104,22 @@ class Test1 {
     @Test
     fun test15() {
 
-        database.perform {
-            update {
-                root.getItemGroup1().addItem(Item.of(title = "Milk", price = 1.29))
-            }
+        database.update {
+            root.getItemGroup1().addItem(Item.of(title = "Milk", price = 1.29))
         }
-        database.perform {
-            update {
-                root.change(title = "My Shop")
-                root.getItemSoap().change(price = 2.99)
-            }
+
+        database.update {
+            root.change(title = "My Shop")
+            root.getItemSoap().change(price = 2.99)
         }
-        database.perform {
-            update {
-                root.getItemSoap().change(price = 3.99)
-            }
+
+        database.update {
+            root.getItemSoap().change(price = 3.99)
         }
-        database.perform {
-            update {
-                root.getItemSoap().change(price = 3.99) // no change
-            }
+
+
+        database.update {
+            root.getItemSoap().change(price = 3.99) // no change
         }
 
         database.perform {
