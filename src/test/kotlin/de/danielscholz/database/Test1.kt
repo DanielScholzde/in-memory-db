@@ -11,6 +11,7 @@ import io.kotest.matchers.shouldBe
 import kotlinx.serialization.modules.subclass
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 import kotlin.time.measureTime
 
 
@@ -18,8 +19,8 @@ class Test1 {
 
     private lateinit var database: Database<Shop>
 
-    private lateinit var soap: Reference<Shop, Item>
-    private lateinit var group1: Reference<Shop, ItemGroup>
+    private lateinit var soapRef: Reference<Shop, Item>
+    private lateinit var group1Ref: Reference<Shop, ItemGroup>
 
 
     @BeforeEach
@@ -43,8 +44,8 @@ class Test1 {
                                 .addItem(Item.of(title = "Melon", price = 0.99))
                         )
                     )
-                this@Test1.soap = soap.asRef()
-                this@Test1.group1 = group1.asRef()
+                this@Test1.soapRef = soap.asRef()
+                this@Test1.group1Ref = group1.asRef()
             }
         }
     }
@@ -55,10 +56,10 @@ class Test1 {
         database.perform {
             update {
                 val item = Item.of(title = "Milk", price = 1.29)
-                val updated = group1.get().addItem(item)
+                val updated = group1Ref.get().addItem(item)
                 item.getItemGroup() shouldBe updated
             }
-            group1.get().items().first { it.title == "Milk" }.getItemGroup() shouldBe group1.get()
+            group1Ref.get().items().first { it.title == "Milk" }.getItemGroup() shouldBe group1Ref.get()
         }
     }
 
@@ -69,26 +70,26 @@ class Test1 {
             update {
                 root.change(title = "My Shop")
                 root.title shouldBe "My Shop"
-                soap.get().change(price = 2.99)
-                soap.get().price shouldBe 2.99
+                soapRef.get().change(price = 2.99)
+                soapRef.get().price shouldBe 2.99
             }
             root.title shouldBe "My Shop"
-            soap.get().price shouldBe 2.99
+            soapRef.get().price shouldBe 2.99
         }
     }
 
     @Test
     fun test13() {
         database.perform {
-            soap.get().price shouldBe 1.79
+            soapRef.get().price shouldBe 1.79
             update {
-                val item = soap.get()
+                val item = soapRef.get()
                 val changed = item.change(price = 3.99)
                 changed.getVersionBefore()!!.perform {
                     it.price shouldBe 1.79
                 }
             }
-            soap.get().getVersionBefore()!!.perform {
+            soapRef.get().getVersionBefore()!!.perform {
                 it.price shouldBe 1.79
             }
         }
@@ -97,13 +98,13 @@ class Test1 {
     @Test
     fun test14() {
         database.perform {
-            val soap_ = soap.get()
+            val soap_ = soapRef.get()
             soap_.price shouldBe 1.79
             update {
-                val item = soap.get()
+                val item = soapRef.get()
                 item shouldBe item.change(price = 1.79) // no change
             }
-            soap_ shouldBe soap.get()
+            soap_ shouldBe soapRef.get()
         }
     }
 
@@ -111,21 +112,21 @@ class Test1 {
     fun test15() {
         database.update {
             val milk = Item.of(title = "Milk", price = 1.29)
-            group1.get().addItem(milk)
+            group1Ref.get().addItem(milk)
         }
         database.update {
             root.change(title = "My Shop")
-            soap.get().change(price = 2.99)
+            soapRef.get().change(price = 2.99)
         }
         database.update {
-            soap.get().change(price = 3.99)
+            soapRef.get().change(price = 3.99)
         }
         database.update {
-            soap.get().change(price = 3.99) // no change
+            soapRef.get().change(price = 3.99) // no change
         }
 
         database.perform {
-            val itemGroup = group1.get()
+            val itemGroup = group1Ref.get()
             itemGroup.itemIds.size shouldBe 2
             itemGroup.getVersionBefore()!!.perform { itemGroupHist1 ->
                 itemGroupHist1.print("1: ").snapShotVersion shouldBe 1
@@ -133,10 +134,10 @@ class Test1 {
             }
 
             println("SnapShot.version: ${snapShot.version}")
-            soap.get().print().price shouldBe 3.99
+            soapRef.get().print().price shouldBe 3.99
             root.print().title shouldBe "My Shop"
 
-            soap.get().getVersionBefore()!!.perform { itemHist1 ->
+            soapRef.get().getVersionBefore()!!.perform { itemHist1 ->
                 println("SnapShot.version: ${snapShot.version}")
                 itemHist1.print().price shouldBe 2.99
 
@@ -148,7 +149,7 @@ class Test1 {
                 }
             }
 
-            soap.get().getVersionsBefore().performEach {
+            soapRef.get().getVersionsBefore().performEach {
                 println(it.price)
                 println(it.getItemGroup().getShop().title)
             }
@@ -156,12 +157,44 @@ class Test1 {
     }
 
     @Test
+    fun test16() {
+        var soap: Item
+        database.perform {
+            soap = soapRef.get()
+            update {
+                soap.change(price = 1.50)
+            }
+            update {
+                assertThrows<Exception> {
+                    soap.change(price = 1.49)
+                }
+            }
+        }
+    }
+
+    @Test
+    fun test17() {
+        var soap: Item
+        database.perform {
+            soap = soapRef.get()
+            update {
+                soap.change(price = 1.50)
+            }
+        }
+        database.perform {
+            update {
+                assertThrows<Exception> {
+                    soap.change(price = 1.49)
+                }
+            }
+        }
+    }
+
+    @Test
     fun performanceTest() {
-        database.writeToFile = false
-        try {
             measureTime {
                 database.update {
-                    group1.get().addItems(
+                    group1Ref.get().addItems(
                         (1..10_000).map { Item.of("Test $it", it.toDouble()) }.toSet()
                     )
                 }
@@ -171,7 +204,7 @@ class Test1 {
 
             measureTime {
                 database.update {
-                    group1.get().addItem(Item.of("Test ABC", 1.99))
+                    group1Ref.get().addItem(Item.of("Test ABC", 1.99))
                 }
             }.let { duration ->
                 println("Insert 1 Item: $duration")
@@ -180,7 +213,7 @@ class Test1 {
             (1..100).forEach {
                 measureTime {
                     database.perform {
-                        group1.get().items()
+                        group1Ref.get().items()
                     }
                 }.let { duration ->
                     if (it == 100) {
@@ -188,9 +221,6 @@ class Test1 {
                     }
                 }
             }
-        } finally {
-            database.writeToFile = true
-        }
     }
 
     private fun <T : Base> T.print(prefix: String? = null) = apply {

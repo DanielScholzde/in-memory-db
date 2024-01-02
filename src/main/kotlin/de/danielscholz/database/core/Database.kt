@@ -8,6 +8,9 @@ import kotlinx.serialization.json.JsonBuilder
 import kotlinx.serialization.modules.PolymorphicModuleBuilder
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.polymorphic
+import kotlin.contracts.ExperimentalContracts
+import kotlin.contracts.InvocationKind
+import kotlin.contracts.contract
 
 typealias ID = Long
 typealias SNAPSHOT_VERSION = Long
@@ -19,7 +22,11 @@ class Database<ROOT : Base>(val name: String, init: ROOT) {
     internal var snapShot: SnapShot<ROOT> = SnapShot.init(init) // TODO private set
 
 
+    @OptIn(ExperimentalContracts::class)
     fun <T> perform(block: SnapShotContext<ROOT>.() -> T): T {
+        contract {
+            callsInPlace(block, InvocationKind.EXACTLY_ONCE)
+        }
         val context = SnapShotContextImpl(this, snapShot)
         return context.block()
     }
