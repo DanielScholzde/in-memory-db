@@ -30,13 +30,16 @@ class Database<ROOT : Base>(init: ROOT) {
     }
 
 
+    @Volatile
+    var writeToFile: Boolean = true
+
     internal fun writeDiff() = true // TODO
 
 
     @Volatile
     internal var json = Json {
         encodeDefaults = true
-        prettyPrint = true
+        //prettyPrint = true
     }
 
     fun addSerializationClasses(block: PolymorphicModuleBuilder<Base>.() -> Unit) {
@@ -48,7 +51,7 @@ class Database<ROOT : Base>(init: ROOT) {
         json = Json {
             serializersModule = serializers
             encodeDefaults = true
-            prettyPrint = true
+            //prettyPrint = true
         }
     }
 

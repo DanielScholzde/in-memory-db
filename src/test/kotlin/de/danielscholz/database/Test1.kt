@@ -7,6 +7,7 @@ import io.kotest.matchers.shouldBe
 import kotlinx.serialization.modules.subclass
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import kotlin.time.measureTime
 
 
 class Test1 {
@@ -146,6 +147,43 @@ class Test1 {
         }
     }
 
+    @Test
+    fun performanceTest() {
+        database.writeToFile = false
+        try {
+            measureTime {
+                database.update {
+                    root.getItemGroup1().addItems(
+                        (1..10_000).map { Item.of("Test $it", it.toDouble()) }.toSet()
+                    )
+                }
+            }.let { duration ->
+                println("Insert 10.000 Items: $duration")
+            }
+
+            measureTime {
+                database.update {
+                    root.getItemGroup1().addItem(Item.of("Test ABC", 1.99))
+                }
+            }.let { duration ->
+                println("Insert 1 Item: $duration")
+            }
+
+            (1..100).forEach {
+                measureTime {
+                    database.perform {
+                        root.getItemGroup1().items()
+                    }
+                }.let { duration ->
+                    if (it == 100) {
+                        println("get all Items: $duration")
+                    }
+                }
+            }
+        } finally {
+            database.writeToFile = true
+        }
+    }
 
     private fun <T : Base> T.print(prefix: String? = null) = apply {
         println(prefix?.let { prefix + this } ?: this.toString())

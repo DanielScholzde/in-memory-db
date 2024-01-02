@@ -154,6 +154,12 @@ class ItemGroup private constructor(
     }
 
     // generated
+    context(ChangeContext<Shop>)
+    fun addItems(items: Set<Item>): ItemGroup {
+        return changeIntern(itemIds = itemIds.addAll(items.map { it.persist().id }))
+    }
+
+    // generated
     override fun toString(): String {
         return "ItemGroup(id=$id, version=$version, snapShotVersion=$snapShotVersion, title='$title', itemIds=$itemIds)"
     }

@@ -79,14 +79,16 @@ class SnapShotContextImpl<ROOT : Base>(override val database: Database<ROOT>, sn
                 if (it.value.version < 0) throw Exception()
             }
 
-            if (database.writeDiff()) {
-                val file = File("database_v${changedSnapShot.version}_diff.json")
-                Files.writeString(file.toPath(), database.json.encodeToString(Diff(change.changed.values)))
-                println(file.name)
-            } else {
-                val file = File("database_v${changedSnapShot.version}_full.json")
-                Files.writeString(file.toPath(), database.json.encodeToString(changedSnapShot))
-                println(file.name)
+            if (database.writeToFile) {
+                if (database.writeDiff()) {
+                    val file = File("database_v${changedSnapShot.version}_diff.json")
+                    Files.writeString(file.toPath(), database.json.encodeToString(Diff(change.changed.values)))
+                    println(file.name)
+                } else {
+                    val file = File("database_v${changedSnapShot.version}_full.json")
+                    Files.writeString(file.toPath(), database.json.encodeToString(changedSnapShot))
+                    println(file.name)
+                }
             }
 
             database.snapShot = changedSnapShot
