@@ -16,7 +16,7 @@ typealias SNAPSHOT_VERSION = Long
 class Database<ROOT : Base>(val name: String, init: ROOT) {
 
     @Volatile
-    internal var snapShot: SnapShot<ROOT> = SnapShot.init(init)
+    internal var snapShot: SnapShot<ROOT> = SnapShot.init(init) // TODO private set
 
 
     fun perform(block: SnapShotContext<ROOT>.() -> Unit) {
@@ -28,6 +28,17 @@ class Database<ROOT : Base>(val name: String, init: ROOT) {
         perform {
             update(block)
         }
+    }
+
+    fun clearHistory() {
+        makeChange {
+            snapShot = snapShot.clearHistory()
+        }
+    }
+
+    @Synchronized
+    internal fun makeChange(block: () -> Unit) {
+        block()
     }
 
 

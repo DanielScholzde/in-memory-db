@@ -59,40 +59,42 @@ class SnapShotContextImpl<ROOT : Base>(override val database: Database<ROOT>, sn
     internal class Diff(val changed: Collection<Base>)
 
 
-    @Synchronized
     override fun update(update: ChangeContext<ROOT>.() -> Unit) {
-        val snapShot = database.snapShot // snapShot may be newer than _snapShot!
-        val changeContext = ChangeContextImpl(database, snapShot)
+        database.makeChange {
 
-        changeContext.update()
+            val snapShot = database.snapShot // snapShot may be newer than _snapShot!
+            val changeContext = ChangeContextImpl(database, snapShot)
 
-        if (changeContext.changed.isNotEmpty()) {
+            changeContext.update()
 
-            val changedRoot = changeContext.changed[snapShot.root.id]?.let {
-                @Suppress("UNCHECKED_CAST")
-                it as ROOT
-            }
-            val changedSnapShot = snapShot.copyIntern(changedRoot ?: snapShot.root, changeContext.changed.values)
+            if (changeContext.changed.isNotEmpty()) {
 
-            changeContext.changed.forEach {
-                if (it.value.snapShotVersion != changedSnapShot.version) throw Exception()
-                if (it.value.version < 0) throw Exception()
-            }
-
-            if (database.writeToFile) {
-                if (database.writeDiff(changedSnapShot.version)) {
-                    val file = File("database_${database.name}_v${changedSnapShot.version}_diff.json")
-                    Files.writeString(file.toPath(), database.json.encodeToString(Diff(changeContext.changed.values)))
-                    println(file.name)
-                } else {
-                    val file = File("database_${database.name}_v${changedSnapShot.version}_full.json")
-                    Files.writeString(file.toPath(), database.json.encodeToString(changedSnapShot))
-                    println(file.name)
+                val changedRoot = changeContext.changed[snapShot.root.id]?.let {
+                    @Suppress("UNCHECKED_CAST")
+                    it as ROOT
                 }
-            }
+                val changedSnapShot = snapShot.copyIntern(changedRoot ?: snapShot.root, changeContext.changed.values)
 
-            database.snapShot = changedSnapShot
-            _snapShot = changedSnapShot
+                changeContext.changed.forEach {
+                    if (it.value.snapShotVersion != changedSnapShot.version) throw Exception()
+                    if (it.value.version < 0) throw Exception()
+                }
+
+                if (database.writeToFile) {
+                    if (database.writeDiff(changedSnapShot.version)) {
+                        val file = File("database_${database.name}_v${changedSnapShot.version}_diff.json")
+                        Files.writeString(file.toPath(), database.json.encodeToString(Diff(changeContext.changed.values)))
+                        println(file.name)
+                    } else {
+                        val file = File("database_${database.name}_v${changedSnapShot.version}_full.json")
+                        Files.writeString(file.toPath(), database.json.encodeToString(changedSnapShot))
+                        println(file.name)
+                    }
+                }
+
+                database.snapShot = changedSnapShot
+                _snapShot = changedSnapShot
+            }
         }
     }
 

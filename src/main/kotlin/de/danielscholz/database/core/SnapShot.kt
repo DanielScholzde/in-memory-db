@@ -59,4 +59,14 @@ class SnapShot<ROOT : Base> private constructor(
         )
     }
 
+    internal fun clearHistory(): SnapShot<ROOT> {
+        return SnapShot(
+            version,
+            root,
+            allEntries,
+            persistentSetOf(),
+            persistentMapOf()
+        )
+    }
+
 }
