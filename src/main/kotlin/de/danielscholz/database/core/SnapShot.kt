@@ -13,7 +13,7 @@ import kotlinx.serialization.Transient
 
 
 @Serializable
-class SnapShot<ROOT : Base> private constructor(
+class SnapShot<ROOT : Base> internal constructor(
     val version: Long,
     internal val root: ROOT,
     internal val allEntries: PersistentMap<ID, Base>,

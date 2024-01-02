@@ -1,3 +1,5 @@
+@file:UseSerializers(PersistentSetSerializer::class)
+
 package de.danielscholz.database.demo
 
 import de.danielscholz.database.core.Base
@@ -5,10 +7,12 @@ import de.danielscholz.database.core.ID
 import de.danielscholz.database.core.SNAPSHOT_VERSION
 import de.danielscholz.database.core.context.ChangeContext
 import de.danielscholz.database.core.context.SnapShotContext
+import de.danielscholz.database.serializer.PersistentSetSerializer
 import kotlinx.collections.immutable.PersistentSet
 import kotlinx.collections.immutable.persistentSetOf
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.UseSerializers
 
 
 @Serializable

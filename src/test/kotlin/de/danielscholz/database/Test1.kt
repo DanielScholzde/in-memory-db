@@ -191,36 +191,81 @@ class Test1 {
     }
 
     @Test
-    fun performanceTest() {
-            measureTime {
-                database.update {
-                    group1Ref.get().addItems(
-                        (1..10_000).map { Item.of("Test $it", it.toDouble()) }.toSet()
+    fun testReadWrite() {
+        val database = Database("ShopTest", Shop.empty()).apply {
+            addSerializationClasses {
+                subclass(Shop::class)
+                subclass(ItemGroup::class)
+                subclass(Item::class)
+            }
+        }
+        database.update {
+            val soap = Item.of(title = "Soap", price = 1.79)
+            val group1 = ItemGroup.of(title = "Group1")
+            root.change(title = "Shop 1")
+                .addItemGroups(
+                    setOf(
+                        group1
+                            .addItem(soap),
+                        ItemGroup.of(title = "Group2")
+                            .addItem(Item.of(title = "Melon", price = 0.99))
                     )
-                }
-            }.let { duration ->
-                println("Insert 10.000 Items: $duration")
-            }
+                )
+            this@Test1.soapRef = soap.asRef()
+            this@Test1.group1Ref = group1.asRef()
+        }
+        database.update {
+            val milk = Item.of(title = "Milk", price = 1.29)
+            group1Ref.get().addItem(milk)
+        }
+        database.update {
+            root.change(title = "My Shop")
+            soapRef.get().change(price = 2.99)
+        }
+        database.update {
+            soapRef.get().change(price = 3.99)
+        }
 
+        val snapShot = database.snapShot
+
+        database.readFromFileSystem()
+
+        snapShot.version shouldBe database.snapShot.version
+        snapShot.allEntries.map { it.key } shouldBe database.snapShot.allEntries.map { it.key }
+        snapShot.snapShotHistory.map { it.key to it.value.allEntries.size } shouldBe database.snapShot.snapShotHistory.map { it.key to it.value.allEntries.size }
+    }
+
+    @Test
+    fun performanceTest() {
+        measureTime {
+            database.update {
+                group1Ref.get().addItems(
+                    (1..10_000).map { Item.of("Test $it", it.toDouble()) }.toSet()
+                )
+            }
+        }.let { duration ->
+            println("Insert 10.000 Items: $duration")
+        }
+
+        measureTime {
+            database.update {
+                group1Ref.get().addItem(Item.of("Test ABC", 1.99))
+            }
+        }.let { duration ->
+            println("Insert 1 Item: $duration")
+        }
+
+        (1..100).forEach {
             measureTime {
-                database.update {
-                    group1Ref.get().addItem(Item.of("Test ABC", 1.99))
+                database.perform {
+                    group1Ref.get().items()
                 }
             }.let { duration ->
-                println("Insert 1 Item: $duration")
-            }
-
-            (1..100).forEach {
-                measureTime {
-                    database.perform {
-                        group1Ref.get().items()
-                    }
-                }.let { duration ->
-                    if (it == 100) {
-                        println("get all Items: $duration")
-                    }
+                if (it == 100) {
+                    println("get all Items: $duration")
                 }
             }
+        }
     }
 
     private fun <T : Base> T.print(prefix: String? = null) = apply {

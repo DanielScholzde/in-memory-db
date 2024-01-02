@@ -64,7 +64,7 @@
     }
 
     // add Item:
-    val milk = database.update {
+    val milkRef = database.update {
         val milk = Item.of(title = "Milk", price = 1.29)
         root.getItemGroups().first { it.title == "Group1" }.addItem(milk)
         milk.asRef() // return reference to milk
@@ -74,19 +74,19 @@
 
     // change price of milk:
     database.update {
-        milk.get().change(price = 3.99)
+        milkRef.get().change(price = 3.99)
     }
 
     // get price of milk before last change:
     database.perform {
-        milk.get().getVersionBefore()?.perform { milkHist ->
+        milkRef.get().getVersionBefore()?.perform { milkHist ->
             println(milkHist.price) // 1.29
         }
     }
 
     // get all milk history changes:
     database.perform {
-        milk.get().getVersionsBefore().performEach { milkHist ->
+        milkRef.get().getVersionsBefore().performEach { milkHist ->
             println(milkHist.price)
         }
     }
