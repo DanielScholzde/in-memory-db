@@ -26,8 +26,8 @@ class SnapShot<ROOT : Base> private constructor(
             return SnapShot(
                 root = root,
                 version = 0,
-                changed = persistentSetOf(),
-                allEntries = persistentMapOf(),
+                changed = persistentSetOf(root),
+                allEntries = persistentMapOf(root.id to root),
                 snapShotHistory = persistentMapOf()
             )
         }

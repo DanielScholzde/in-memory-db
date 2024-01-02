@@ -19,13 +19,13 @@ class Database<ROOT : Base>(val name: String, init: ROOT) {
     internal var snapShot: SnapShot<ROOT> = SnapShot.init(init) // TODO private set
 
 
-    fun perform(block: SnapShotContext<ROOT>.() -> Unit) {
+    fun <T> perform(block: SnapShotContext<ROOT>.() -> T): T {
         val context = SnapShotContextImpl(this, snapShot)
-        context.block()
+        return context.block()
     }
 
-    fun update(block: ChangeContext<ROOT>.() -> Unit) {
-        perform {
+    fun <T> update(block: ChangeContext<ROOT>.() -> T): T {
+        return perform {
             update(block)
         }
     }
@@ -37,8 +37,8 @@ class Database<ROOT : Base>(val name: String, init: ROOT) {
     }
 
     @Synchronized
-    internal fun makeChange(block: () -> Unit) {
-        block()
+    internal fun <T> makeChange(block: () -> T): T {
+        return block()
     }
 
 

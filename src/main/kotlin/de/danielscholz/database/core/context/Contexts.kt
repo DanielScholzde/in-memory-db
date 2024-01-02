@@ -17,11 +17,13 @@ interface SnapShotContext<ROOT : Base> {
 
     fun ID.resolve(): Base
 
+    fun <T : Base> T.asRef(): Reference<ROOT, T>
+
     fun Base.getReferencedBy(): Collection<Base>
 
     fun <T : Base> T.getVersionBefore(): HistoryEntryContext<T, ROOT>?
 
-    fun update(update: ChangeContext<ROOT>.() -> Unit)
+    fun <T> update(update: ChangeContext<ROOT>.() -> T): T
 
 }
 
@@ -32,5 +34,7 @@ interface ChangeContext<ROOT : Base> : SnapShotContext<ROOT> {
     fun <T : Base> T.persist(): T
 
     val nextSnapShotVersion: SNAPSHOT_VERSION
+
+    fun Base.checkIsCurrent()
 
 }

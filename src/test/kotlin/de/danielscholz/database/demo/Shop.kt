@@ -34,17 +34,18 @@ class Shop private constructor(
 
     // generated
     context(ChangeContext<Shop>)
-    fun change(title: String = this.title): Shop {
-        return changeIntern(title = title)
-    }
-
-    // generated
-    context(ChangeContext<Shop>)
     private fun changeIntern(title: String = this.title, itemGroupIds: PersistentSet<ID> = this.itemGroupIds): Shop {
+        this.checkIsCurrent()
         if (title != this.title || itemGroupIds != this.itemGroupIds) {
             return Shop(id, version + 1, nextSnapShotVersion, title, itemGroupIds).persist()
         }
         return this
+    }
+
+    // generated
+    context(ChangeContext<Shop>)
+    fun change(title: String = this.title): Shop {
+        return changeIntern(title = title)
     }
 
     // generated
@@ -60,13 +61,13 @@ class Shop private constructor(
     // generated
     context(ChangeContext<Shop>)
     fun addItemGroup(itemGroup: ItemGroup): Shop {
-        return changeIntern(itemGroupIds = itemGroupIds.add(itemGroup.persist().id))
+        return changeIntern(itemGroupIds = itemGroupIds.add(itemGroup.id))
     }
 
     // generated
     context(ChangeContext<Shop>)
     fun addItemGroups(itemGroups: Set<ItemGroup>): Shop {
-        return changeIntern(itemGroupIds = itemGroupIds.addAll(itemGroups.map { it.persist().id }))
+        return changeIntern(itemGroupIds = itemGroupIds.addAll(itemGroups.map { it.id }))
     }
 
     // generated

@@ -25,23 +25,24 @@ class ItemGroup private constructor(
         // generated
         context(ChangeContext<Shop>)
         fun of(title: String): ItemGroup {
-            return ItemGroup(getNextId(), 0, nextSnapShotVersion, title, persistentSetOf())
+            return ItemGroup(getNextId(), 0, nextSnapShotVersion, title, persistentSetOf()).persist()
         }
+    }
+
+    // generated
+    context(ChangeContext<Shop>)
+    private fun changeIntern(title: String = this.title, itemIds: PersistentSet<ID> = this.itemIds): ItemGroup {
+        this.checkIsCurrent()
+        if (title != this.title || itemIds != this.itemIds) {
+            return ItemGroup(id, version + 1, nextSnapShotVersion, title, itemIds).persist()
+        }
+        return this
     }
 
     // generated
     context(ChangeContext<Shop>)
     fun change(title: String = this.title): ItemGroup {
         return changeIntern(title = title)
-    }
-
-    // generated
-    context(ChangeContext<Shop>)
-    private fun changeIntern(title: String = this.title, itemIds: PersistentSet<ID> = this.itemIds): ItemGroup {
-        if (title != this.title || itemIds != this.itemIds) {
-            return ItemGroup(id, version + 1, nextSnapShotVersion, title, itemIds).persist()
-        }
-        return this
     }
 
     // generated
@@ -69,13 +70,13 @@ class ItemGroup private constructor(
     // generated
     context(ChangeContext<Shop>)
     fun addItem(item: Item): ItemGroup {
-        return changeIntern(itemIds = itemIds.add(item.persist().id))
+        return changeIntern(itemIds = itemIds.add(item.id))
     }
 
     // generated
     context(ChangeContext<Shop>)
     fun addItems(items: Set<Item>): ItemGroup {
-        return changeIntern(itemIds = itemIds.addAll(items.map { it.persist().id }))
+        return changeIntern(itemIds = itemIds.addAll(items.map { it.id }))
     }
 
     // generated

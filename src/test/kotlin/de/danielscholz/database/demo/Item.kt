@@ -24,23 +24,24 @@ class Item private constructor(
         // generated
         context(ChangeContext<Shop>)
         fun of(title: String, price: Double): Item {
-            return Item(getNextId(), 0, nextSnapShotVersion, title, price)
+            return Item(getNextId(), 0, nextSnapShotVersion, title, price).persist()
         }
+    }
+
+    // generated
+    context(ChangeContext<Shop>)
+    fun change(title: String = this.title, price: Double = this.price): Item {
+        this.checkIsCurrent()
+        if (title != this.title || price != this.price) {
+            return Item(id, version + 1, nextSnapShotVersion, title, price).persist()
+        }
+        return this
     }
 
     // generated
     context(SnapShotContext<Shop>)
     fun getItemGroup(): ItemGroup {
         return this.getReferencedBy().filterIsInstance<ItemGroup>().first()
-    }
-
-    // generated
-    context(ChangeContext<Shop>)
-    fun change(title: String = this.title, price: Double = this.price): Item {
-        if (title != this.title || price != this.price) {
-            return Item(id, version + 1, nextSnapShotVersion, title, price).persist()
-        }
-        return this
     }
 
     // generated

@@ -22,6 +22,11 @@ class ChangeContextImpl<ROOT : Base>(override val database: Database<ROOT>, over
     override fun ID.resolve() = changed[this] ?: snapShot.allEntries[this] ?: throw Exception()
 
 
+    override fun <T : Base> T.asRef(): Reference<ROOT, T> {
+        return Reference(this.id)
+    }
+
+
     context(ChangeContext<ROOT>)
     override fun <T : Base> T.persist(): T {
         val existing = snapShot.allEntries[this.id]
@@ -34,6 +39,10 @@ class ChangeContextImpl<ROOT : Base>(override val database: Database<ROOT>, over
 
     override val nextSnapShotVersion: SNAPSHOT_VERSION
         get() = snapShot.version + 1
+
+    override fun Base.checkIsCurrent() {
+        if (this.asRef().resolve() != this) throw Exception()
+    }
 
 
     override fun Base.getReferencedBy(): Collection<Base> {
@@ -70,7 +79,7 @@ class ChangeContextImpl<ROOT : Base>(override val database: Database<ROOT>, over
     }
 
 
-    override fun update(update: ChangeContext<ROOT>.() -> Unit) {
+    override fun <T> update(update: ChangeContext<ROOT>.() -> T): T {
         throw Exception()
     }
 

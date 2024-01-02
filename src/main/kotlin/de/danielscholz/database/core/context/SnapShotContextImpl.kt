@@ -49,6 +49,9 @@ class SnapShotContextImpl<ROOT : Base>(override val database: Database<ROOT>, sn
         return referencedByObjectIds.map { it.resolve() }
     }
 
+    override fun <T : Base> T.asRef(): Reference<ROOT, T> {
+        return Reference(this.id)
+    }
 
     override fun <T : Base> T.getVersionBefore(): HistoryEntryContext<T, ROOT>? {
         return getVersionBefore(this, snapShot, database)
@@ -59,13 +62,13 @@ class SnapShotContextImpl<ROOT : Base>(override val database: Database<ROOT>, sn
     internal class Diff(val changed: Collection<Base>)
 
 
-    override fun update(update: ChangeContext<ROOT>.() -> Unit) {
-        database.makeChange {
+    override fun <T> update(update: ChangeContext<ROOT>.() -> T): T {
+        return database.makeChange {
 
             val snapShot = database.snapShot // snapShot may be newer than _snapShot!
             val changeContext = ChangeContextImpl(database, snapShot)
 
-            changeContext.update()
+            val result = changeContext.update()
 
             if (changeContext.changed.isNotEmpty()) {
 
@@ -95,6 +98,8 @@ class SnapShotContextImpl<ROOT : Base>(override val database: Database<ROOT>, sn
                 database.snapShot = changedSnapShot
                 _snapShot = changedSnapShot
             }
+
+            result
         }
     }
 

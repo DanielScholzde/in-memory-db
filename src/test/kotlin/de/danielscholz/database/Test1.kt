@@ -2,6 +2,7 @@ package de.danielscholz.database
 
 import de.danielscholz.database.core.Base
 import de.danielscholz.database.core.Database
+import de.danielscholz.database.core.context.Reference
 import de.danielscholz.database.core.context.SnapShotContext
 import de.danielscholz.database.demo.Item
 import de.danielscholz.database.demo.ItemGroup
@@ -17,6 +18,9 @@ class Test1 {
 
     private lateinit var database: Database<Shop>
 
+    private lateinit var soap: Reference<Shop, Item>
+
+
     @BeforeEach
     fun init() {
         database = Database("Shop", Shop.empty()).apply {
@@ -27,15 +31,17 @@ class Test1 {
             }
             writeToFile = false
             update {
+                val soap = Item.of(title = "Soap", price = 1.79)
                 root.change(title = "Shop 1")
                     .addItemGroups(
                         setOf(
                             ItemGroup.of(title = "Group1")
-                                .addItem(Item.of(title = "Soap", price = 1.79)),
+                                .addItem(soap),
                             ItemGroup.of(title = "Group2")
                                 .addItem(Item.of(title = "Melon", price = 0.99))
                         )
                     )
+                this@Test1.soap = soap.asRef()
             }
         }
     }
@@ -43,11 +49,6 @@ class Test1 {
     context(SnapShotContext<Shop>)
     private fun Shop.getItemGroup1(): ItemGroup {
         return itemGroups().first { it.title == "Group1" }
-    }
-
-    context(SnapShotContext<Shop>)
-    private fun Shop.getItemSoap(): Item {
-        return getItemGroup1().items().first { it.title == "Soap" }
     }
 
 
@@ -70,26 +71,26 @@ class Test1 {
             update {
                 root.change(title = "My Shop")
                 root.title shouldBe "My Shop"
-                root.getItemSoap().change(price = 2.99)
-                root.getItemSoap().price shouldBe 2.99
+                soap.resolve().change(price = 2.99)
+                soap.resolve().price shouldBe 2.99
             }
             root.title shouldBe "My Shop"
-            root.getItemSoap().price shouldBe 2.99
+            soap.resolve().price shouldBe 2.99
         }
     }
 
     @Test
     fun test13() {
         database.perform {
-            root.getItemSoap().price shouldBe 1.79
+            soap.resolve().price shouldBe 1.79
             update {
-                val item = root.getItemSoap()
+                val item = soap.resolve()
                 val changed = item.change(price = 3.99)
                 changed.getVersionBefore()!!.perform {
                     it.price shouldBe 1.79
                 }
             }
-            root.getItemSoap().getVersionBefore()!!.perform {
+            soap.resolve().getVersionBefore()!!.perform {
                 it.price shouldBe 1.79
             }
         }
@@ -98,30 +99,31 @@ class Test1 {
     @Test
     fun test14() {
         database.perform {
-            val soap = root.getItemSoap()
-            soap.price shouldBe 1.79
+            val soap_ = soap.resolve()
+            soap_.price shouldBe 1.79
             update {
-                val item = root.getItemSoap()
+                val item = soap.resolve()
                 item shouldBe item.change(price = 1.79) // no change
             }
-            soap shouldBe root.getItemSoap()
+            soap_ shouldBe soap.resolve()
         }
     }
 
     @Test
     fun test15() {
         database.update {
-            root.getItemGroup1().addItem(Item.of(title = "Milk", price = 1.29))
+            val milk = Item.of(title = "Milk", price = 1.29)
+            root.getItemGroup1().addItem(milk)
         }
         database.update {
             root.change(title = "My Shop")
-            root.getItemSoap().change(price = 2.99)
+            soap.resolve().change(price = 2.99)
         }
         database.update {
-            root.getItemSoap().change(price = 3.99)
+            soap.resolve().change(price = 3.99)
         }
         database.update {
-            root.getItemSoap().change(price = 3.99) // no change
+            soap.resolve().change(price = 3.99) // no change
         }
 
         database.perform {
@@ -132,12 +134,11 @@ class Test1 {
                 itemGroupHist1.itemIds.size shouldBe 1
             }
 
-            val item = root.getItemSoap()
             println("SnapShot.version: ${snapShot.version}")
-            item.print().price shouldBe 3.99
+            soap.resolve().print().price shouldBe 3.99
             root.print().title shouldBe "My Shop"
 
-            item.getVersionBefore()!!.perform { itemHist1 ->
+            soap.resolve().getVersionBefore()!!.perform { itemHist1 ->
                 println("SnapShot.version: ${snapShot.version}")
                 itemHist1.print().price shouldBe 2.99
 
