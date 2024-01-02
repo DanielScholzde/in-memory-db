@@ -4,6 +4,7 @@ import de.danielscholz.database.core.Base
 import de.danielscholz.database.core.Database
 import de.danielscholz.database.core.context.SnapShotContext
 import io.kotest.matchers.shouldBe
+import kotlinx.serialization.modules.subclass
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
@@ -15,6 +16,11 @@ class Test1 {
     @BeforeEach
     fun init() {
         database = Database(Shop.empty()).apply {
+            addSerializationClasses {
+                subclass(Shop::class)
+                subclass(ItemGroup::class)
+                subclass(Item::class)
+            }
             update {
                 root.change(title = "Shop 1")
                     .addItemGroups(
@@ -38,7 +44,6 @@ class Test1 {
     private fun Shop.getItemSoap(): Item {
         return getItemGroup1().items().first { it.title == "Soap" }
     }
-
 
 
     @Test
@@ -142,8 +147,7 @@ class Test1 {
     }
 
 
-    private fun <T : Base> T.print(prefix: String? = null): T {
+    private fun <T : Base> T.print(prefix: String? = null) = apply {
         println(prefix?.let { prefix + this } ?: this.toString())
-        return this
     }
 }
