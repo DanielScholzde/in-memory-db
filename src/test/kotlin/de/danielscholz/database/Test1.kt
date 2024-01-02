@@ -233,6 +233,9 @@ class Test1 {
         snapShot.version shouldBe database.snapShot.version
         snapShot.allEntries.map { it.key } shouldBe database.snapShot.allEntries.map { it.key }
         snapShot.snapShotHistory.map { it.key to it.value.allEntries.size } shouldBe database.snapShot.snapShotHistory.map { it.key to it.value.allEntries.size }
+
+        database.clearHistory()
+
     }
 
     @Test

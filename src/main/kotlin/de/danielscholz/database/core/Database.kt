@@ -1,9 +1,12 @@
 package de.danielscholz.database.core
 
 import de.danielscholz.database.core.context.ChangeContext
+import de.danielscholz.database.core.context.Diff
 import de.danielscholz.database.core.context.SnapShotContext
 import de.danielscholz.database.core.context.SnapShotContextImpl
+import de.danielscholz.database.core.context.toSerializable
 import kotlinx.collections.immutable.toPersistentSet
+import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonBuilder
 import kotlinx.serialization.modules.PolymorphicModuleBuilder
@@ -48,6 +51,11 @@ class Database<ROOT : Base>(val name: String, private val root: ROOT) {
     fun clearHistory() {
         makeChange {
             snapShot = snapShot.clearHistory()
+            if (writeToFile) {
+                val file = File("database_${name}_v${snapShot.version}_full.json")
+                Files.writeString(file.toPath(), json.encodeToString(snapShot.toSerializable()))
+                println(file.name)
+            }
         }
     }
 
@@ -62,7 +70,7 @@ class Database<ROOT : Base>(val name: String, private val root: ROOT) {
             .map { it to it.name.removePrefix("database_${name}_v").removeSuffix("_diff.json").toLong() }
             .sortedBy { it.second }
             .fold(SnapShot.init(root)) { snapShot1, (file, version) ->
-                val diff = json.decodeFromString<SnapShotContextImpl.Diff>(Files.readString(file.toPath()))
+                val diff = json.decodeFromString<Diff>(Files.readString(file.toPath()))
 
                 val allEntries = snapShot1.allEntries.putAll(diff.changed.associateBy { it.id })
 
@@ -85,6 +93,8 @@ class Database<ROOT : Base>(val name: String, private val root: ROOT) {
     @Volatile
     var writeDiff: (SNAPSHOT_VERSION) -> Boolean = { true } // TODO
 
+    @Volatile
+    var prettyPrint = true
 
     @Volatile
     internal var json = Json {
@@ -93,7 +103,7 @@ class Database<ROOT : Base>(val name: String, private val root: ROOT) {
 
     private fun JsonBuilder.initJson() {
         encodeDefaults = true
-        prettyPrint = true
+        prettyPrint = this@Database.prettyPrint
     }
 
     fun addSerializationClasses(block: PolymorphicModuleBuilder<Base>.() -> Unit) {

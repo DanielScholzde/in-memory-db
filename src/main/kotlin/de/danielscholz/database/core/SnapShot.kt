@@ -1,18 +1,19 @@
+@file:UseSerializers(PersistentSetSerializer::class)
+
 package de.danielscholz.database.core
 
 import com.google.common.collect.MultimapBuilder
 import com.google.common.collect.SetMultimap
 import de.danielscholz.database.core.util.addOrReplace
+import de.danielscholz.database.serializer.PersistentSetSerializer
 import kotlinx.collections.immutable.PersistentMap
 import kotlinx.collections.immutable.PersistentSet
 import kotlinx.collections.immutable.persistentMapOf
 import kotlinx.collections.immutable.persistentSetOf
 import kotlinx.collections.immutable.toPersistentSet
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.Transient
+import kotlinx.serialization.UseSerializers
 
 
-@Serializable
 class SnapShot<ROOT : Base> internal constructor(
     val version: Long,
     internal val rootId: ID,
@@ -33,7 +34,6 @@ class SnapShot<ROOT : Base> internal constructor(
         }
     }
 
-    @Transient
     internal val backReferences: SetMultimap<ID, ID> = MultimapBuilder.hashKeys().hashSetValues().build()
 
     init {

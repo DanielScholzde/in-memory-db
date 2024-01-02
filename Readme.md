@@ -10,13 +10,26 @@
     - full database content is written asynchronous to filesystem with a customizable interval
 - No SQL, just work with database content and its entity relations as normal objects
   - use directly Kotlin collections/streaming API (map/reduce)
+- Circular dependencies are no problem
+  - bidirectional mapping is supplied out of the box
 - Whole implementation is very small, everyone can understand in short amount of time what is going on
 
 ### Technical details:
 
-- IDs are globally unique (ID sequence generator is shared across all classes)
+- A database SnapShot is a graph of immutable Entities having exactly one root/entry node
+- Each Entity has an ID and a version
+- IDs are unique across whole database (ID sequence generator is shared across all classes)
+- Entities have 0..n properties and 0..n references to other Entities
+  - Change of a property or reference creates a new instance with an incremented version of that entity (id stays the same)
+- Entities are loosely coupled to each other (lookup to other entities is done via foreign id)
 - Two instances/objects are equal if their reference is equals
     - this is also a huge performance advantage (no nested deep recursion equals checks are necessary)
+- Database object has a synchronized update method to perform changes to the database
+  - all actions done within this update should be a fast implementation
+  - this speciality (synchronized update method) is taken into account to prevent further complex optimistic locking code
+    - pro: no optimistic locking exception can occur
+    - pro: code is simple and comprehensive
+    - con: update method must be fast
 - For writing changes to filesystem, kotlinx serialization is used
 
 ## Example:

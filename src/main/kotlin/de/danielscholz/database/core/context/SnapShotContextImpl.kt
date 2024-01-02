@@ -1,10 +1,11 @@
 package de.danielscholz.database.core.context
 
+import com.google.common.collect.MultimapBuilder
+import com.google.common.collect.SetMultimap
 import de.danielscholz.database.core.Base
 import de.danielscholz.database.core.Database
 import de.danielscholz.database.core.ID
 import de.danielscholz.database.core.SnapShot
-import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import java.io.File
 import java.nio.file.Files
@@ -59,10 +60,6 @@ class SnapShotContextImpl<ROOT : Base>(override val database: Database<ROOT>, sn
     }
 
 
-    @Serializable
-    internal class Diff(val changed: Collection<Base>)
-
-
     override fun <T> update(update: ChangeContext<ROOT>.() -> T): T {
         return database.makeChange {
 
@@ -87,7 +84,7 @@ class SnapShotContextImpl<ROOT : Base>(override val database: Database<ROOT>, sn
                         println(file.name)
                     } else {
                         val file = File("database_${database.name}_v${changedSnapShot.version}_full.json")
-                        Files.writeString(file.toPath(), database.json.encodeToString(changedSnapShot))
+                        Files.writeString(file.toPath(), database.json.encodeToString(changedSnapShot.toSerializable()))
                         println(file.name)
                     }
                 }
