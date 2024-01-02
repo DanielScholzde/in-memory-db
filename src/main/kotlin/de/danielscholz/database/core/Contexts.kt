@@ -1,30 +1,28 @@
 package de.danielscholz.database.core
 
-import de.danielscholz.database.Shop
 
+interface SnapShotContext<ROOT : Base> {
 
-interface SnapShotContext {
+    val database: Database<ROOT>
 
-    val database: Database
+    val snapShot: SnapShot<ROOT>
 
-    val snapShot: SnapShot
-
-    val root: Shop
+    val root: ROOT
 
     fun ID.resolve(): Base
 
     fun Base.getReferencedBy(): Collection<Base>
 
-    fun <T : Base> T.getVersionBefore(): HistoryEntryContext<T>?
+    fun <T : Base> T.getVersionBefore(): HistoryEntryContext<T, ROOT>?
 
-    fun update(update: ChangeContext.() -> Unit)
+    fun update(update: ChangeContext<ROOT>.() -> Unit)
 
 }
 
 
-interface ChangeContext : SnapShotContext {
+interface ChangeContext<ROOT : Base> : SnapShotContext<ROOT> {
 
-    context(SnapShotContext)
+    context(SnapShotContext<ROOT>)
     fun <T : Base> T.persist(): T
 
     val nextSnapShotVersion: SNAPSHOT_VERSION

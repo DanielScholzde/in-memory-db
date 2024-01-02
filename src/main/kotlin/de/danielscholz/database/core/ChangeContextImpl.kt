@@ -1,23 +1,30 @@
 package de.danielscholz.database.core
 
-import de.danielscholz.database.Shop
 
-
-class ChangeContextImpl(override val database: Database, override val snapShot: SnapShot) : ChangeContext {
+class ChangeContextImpl<ROOT : Base>(override val database: Database<ROOT>, override val snapShot: SnapShot<ROOT>) : ChangeContext<ROOT> {
 
     internal val changed: MutableMap<ID, Base> = mutableMapOf()
 
-    override val root: Shop get() = changed[snapShot.root.id]?.let { it as Shop } ?: snapShot.root
+    override val root: ROOT
+        get() = changed[snapShot.root.id]?.let {
+            @Suppress("UNCHECKED_CAST")
+            it as ROOT
+        } ?: snapShot.root
 
     override fun ID.resolve() = changed[this] ?: snapShot.allEntries[this] ?: throw Exception()
 
-    context(SnapShotContext)
+    context(SnapShotContext<ROOT>)
     override fun <T : Base> T.persist(): T {
         val existing = snapShot.allEntries[this.id]
         if (existing == this) return this
         if (existing != null && this.version <= existing.version) throw Exception()
-        changed[this.id] = this
-        return this
+        var entry = this
+        if (this.snapShotVersion != nextSnapShotVersion) {
+            @Suppress("UNCHECKED_CAST")
+            entry = entry.setSnapShotVersion(nextSnapShotVersion) as T
+        }
+        changed[entry.id] = entry
+        return entry
     }
 
     override val nextSnapShotVersion: SNAPSHOT_VERSION
@@ -41,7 +48,7 @@ class ChangeContextImpl(override val database: Database, override val snapShot: 
         return result.map { it.resolve() }
     }
 
-    override fun <T : Base> T.getVersionBefore(): HistoryEntryContext<T>? {
+    override fun <T : Base> T.getVersionBefore(): HistoryEntryContext<T, ROOT>? {
         if (changed[this.id] != null) {
             snapShot.allEntries[this.id]?.let {
                 @Suppress("UNCHECKED_CAST")
@@ -58,7 +65,7 @@ class ChangeContextImpl(override val database: Database, override val snapShot: 
         return null
     }
 
-    override fun update(update: ChangeContext.() -> Unit) {
+    override fun update(update: ChangeContext<ROOT>.() -> Unit) {
         throw Exception()
     }
 

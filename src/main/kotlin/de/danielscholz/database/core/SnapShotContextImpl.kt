@@ -1,21 +1,20 @@
 package de.danielscholz.database.core
 
-import de.danielscholz.database.Shop
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import java.io.File
 import java.nio.file.Files
 
 
-class SnapShotContextImpl(override val database: Database, snapShot: SnapShot) : SnapShotContext {
+class SnapShotContextImpl<ROOT : Base>(override val database: Database<ROOT>, snapShot: SnapShot<ROOT>) : SnapShotContext<ROOT> {
 
     @Volatile
-    private var _snapShot: SnapShot = snapShot
+    private var _snapShot: SnapShot<ROOT> = snapShot
 
-    override val snapShot: SnapShot
+    override val snapShot: SnapShot<ROOT>
         get() = _snapShot
 
-    override val root: Shop get() = snapShot.root
+    override val root: ROOT get() = snapShot.root
 
     override fun ID.resolve() = snapShot.allEntries[this] ?: throw Exception()
 
@@ -24,11 +23,11 @@ class SnapShotContextImpl(override val database: Database, snapShot: SnapShot) :
         return referencedByObjectIds.map { it.resolve() }
     }
 
-    override fun <T : Base> T.getVersionBefore(): HistoryEntryContext<T>? {
+    override fun <T : Base> T.getVersionBefore(): HistoryEntryContext<T, ROOT>? {
         val snapShot1 = snapShot.snapShotHistory[this.snapShotVersion - 1]
         snapShot1?.allEntries?.get(this.id)?.let {
             @Suppress("UNCHECKED_CAST")
-            return HistoryEntryContext(SnapShotContextImpl(database, snapShot1), it as T)
+            return HistoryEntryContext(SnapShotContextImpl<ROOT>(database, snapShot1), it as T)
         }
         return null
     }
@@ -39,15 +38,18 @@ class SnapShotContextImpl(override val database: Database, snapShot: SnapShot) :
 
 
     @Synchronized
-    override fun update(update: ChangeContext.() -> Unit) {
+    override fun update(update: ChangeContext<ROOT>.() -> Unit) {
         val snapShot = database.snapShot
-        val change = ChangeContextImpl(database, snapShot)
+        val change = ChangeContextImpl<ROOT>(database, snapShot)
 
         change.update()
 
         if (change.changed.isNotEmpty()) {
 
-            val changedRoot = change.changed[snapShot.root.id]?.let { it as Shop }
+            val changedRoot = change.changed[snapShot.root.id]?.let {
+                @Suppress("UNCHECKED_CAST")
+                it as ROOT
+            }
             val changedSnapShot = snapShot.copyIntern(changedRoot ?: snapShot.root, change.changed.values)
 
             if (database.writeDiff()) {

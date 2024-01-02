@@ -2,23 +2,29 @@ package de.danielscholz.database.core
 
 import com.google.common.collect.MultimapBuilder
 import com.google.common.collect.SetMultimap
-import de.danielscholz.database.Shop
 import kotlinx.collections.immutable.PersistentMap
 import kotlinx.collections.immutable.PersistentSet
 import kotlinx.collections.immutable.persistentMapOf
+import kotlinx.collections.immutable.persistentSetOf
 import kotlinx.collections.immutable.toPersistentSet
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 
 
 @Serializable
-class SnapShot(
+class SnapShot<ROOT : Base> private constructor(
     val version: Long = 0,
-    internal val root: Shop,
+    internal val root: ROOT,
     internal val allEntries: PersistentMap<ID, Base> = persistentMapOf(),
     val changed: PersistentSet<Base>,
-    val snapShotHistory: PersistentMap<SNAPSHOT_VERSION, SnapShot>
+    val snapShotHistory: PersistentMap<SNAPSHOT_VERSION, SnapShot<ROOT>>
 ) {
+
+    companion object {
+        fun <ROOT : Base> init(root: ROOT): SnapShot<ROOT> {
+            return SnapShot(root = root, changed = persistentSetOf(), snapShotHistory = persistentMapOf())
+        }
+    }
 
     @Transient
     internal val backReferences: SetMultimap<ID, ID> = MultimapBuilder.hashKeys().hashSetValues().build()
@@ -33,9 +39,9 @@ class SnapShot(
 
 
     internal fun copyIntern(
-        root: Shop,
+        root: ROOT,
         changedEntries: Collection<Base>
-    ): SnapShot {
+    ): SnapShot<ROOT> {
         return SnapShot(
             version + 1,
             root,

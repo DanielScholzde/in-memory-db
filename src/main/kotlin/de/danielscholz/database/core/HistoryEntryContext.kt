@@ -1,9 +1,9 @@
 package de.danielscholz.database.core
 
 
-class HistoryEntryContext<T : Base>(val snapShotContext: SnapShotContext, val entry: T) {
+class HistoryEntryContext<T : Base, ROOT : Base>(val snapShotContext: SnapShotContext<ROOT>, val entry: T) {
 
-    fun perform(block: SnapShotContext.(T) -> Unit) {
+    fun perform(block: SnapShotContext<ROOT>.(T) -> Unit) {
         snapShotContext.block(entry)
     }
 
