@@ -1,9 +1,16 @@
-package de.danielscholz.database.core
+package de.danielscholz.database.core.context
+
+import de.danielscholz.database.core.Base
+import de.danielscholz.database.core.Database
+import de.danielscholz.database.core.ID
+import de.danielscholz.database.core.SNAPSHOT_VERSION
+import de.danielscholz.database.core.SnapShot
 
 
 class ChangeContextImpl<ROOT : Base>(override val database: Database<ROOT>, override val snapShot: SnapShot<ROOT>) : ChangeContext<ROOT> {
 
     internal val changed: MutableMap<ID, Base> = mutableMapOf()
+
 
     override val root: ROOT
         get() = changed[snapShot.root.id]?.let {
@@ -11,7 +18,9 @@ class ChangeContextImpl<ROOT : Base>(override val database: Database<ROOT>, over
             it as ROOT
         } ?: snapShot.root
 
+
     override fun ID.resolve() = changed[this] ?: snapShot.allEntries[this] ?: throw Exception()
+
 
     context(ChangeContext<ROOT>)
     override fun <T : Base> T.persist(): T {
@@ -22,26 +31,32 @@ class ChangeContextImpl<ROOT : Base>(override val database: Database<ROOT>, over
         return this
     }
 
+
     override val nextSnapShotVersion: SNAPSHOT_VERSION
         get() = snapShot.version + 1
 
+
     override fun Base.getReferencedBy(): Collection<Base> {
-        val referencedByObjectIds = snapShot.backReferences[this.id]
-        val x = changed.values.flatMap { it.referencedIds }
         val result = mutableSetOf<ID>()
-        referencedByObjectIds.forEach {
-            if (it !in changed.keys) {
-                result.add(it)
+
+        val referencedByObjectIds = snapShot.backReferences[this.id]
+        referencedByObjectIds.forEach { referencedByObjectId ->
+            if (referencedByObjectId !in changed.keys) {
+                result.add(referencedByObjectId)
             } else {
-                val referencedIds = changed[it]!!.referencedIds
-                if (it in referencedIds) result += it
+                val referencedIds = changed[referencedByObjectId]!!.referencedIds
+                if (referencedByObjectId in referencedIds) result += referencedByObjectId
             }
         }
-        x.forEach {
 
+        changed.values.forEach {
+            if (this.id in it.referencedIds) {
+                result.add(it.id)
+            }
         }
         return result.map { it.resolve() }
     }
+
 
     override fun <T : Base> T.getVersionBefore(): HistoryEntryContext<T, ROOT>? {
         if (changed[this.id] != null) {
@@ -51,14 +66,9 @@ class ChangeContextImpl<ROOT : Base>(override val database: Database<ROOT>, over
             }
             return null // entry is new
         }
-        // copy from SnapShotContextImpl:
-        val snapShot1 = snapShot.snapShotHistory[this.snapShotVersion - 1]
-        snapShot1?.allEntries?.get(this.id)?.let {
-            @Suppress("UNCHECKED_CAST")
-            return HistoryEntryContext(SnapShotContextImpl(database, snapShot1), it as T)
-        }
-        return null
+        return SnapShotContextImpl.getVersionBefore(this, snapShot, database)
     }
+
 
     override fun update(update: ChangeContext<ROOT>.() -> Unit) {
         throw Exception()

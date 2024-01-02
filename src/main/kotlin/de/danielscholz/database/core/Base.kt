@@ -8,7 +8,7 @@ import java.util.concurrent.atomic.AtomicLong
 abstract class Base {
 
     companion object {
-        private val idGen = AtomicLong()
+        private val idGen = AtomicLong() // global unique? or database unique?
         fun getNextId() = idGen.incrementAndGet()
     }
 
@@ -24,4 +24,5 @@ abstract class Base {
     final override fun equals(other: Any?) = this === other
 
     final override fun hashCode() = id.hashCode()
+
 }

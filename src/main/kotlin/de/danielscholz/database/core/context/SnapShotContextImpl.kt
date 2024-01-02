@@ -1,5 +1,9 @@
-package de.danielscholz.database.core
+package de.danielscholz.database.core.context
 
+import de.danielscholz.database.core.Base
+import de.danielscholz.database.core.Database
+import de.danielscholz.database.core.ID
+import de.danielscholz.database.core.SnapShot
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import java.io.File
@@ -7,6 +11,25 @@ import java.nio.file.Files
 
 
 class SnapShotContextImpl<ROOT : Base>(override val database: Database<ROOT>, snapShot: SnapShot<ROOT>) : SnapShotContext<ROOT> {
+
+    companion object {
+        fun <T : Base, ROOT : Base> getVersionBefore(entry: T, snapShot: SnapShot<ROOT>, database: Database<ROOT>): HistoryEntryContext<T, ROOT>? {
+            val snapShot1 = snapShot.snapShotHistory[entry.snapShotVersion - 1]
+            snapShot1?.allEntries?.get(entry.id)?.let {
+                if (it.snapShotVersion == snapShot1.version) {
+                    @Suppress("UNCHECKED_CAST")
+                    return HistoryEntryContext(SnapShotContextImpl(database, snapShot1), it as T)
+                } else {
+                    val snapShot2 = snapShot.snapShotHistory[it.snapShotVersion]
+                    snapShot2?.allEntries?.get(entry.id)?.let {
+                        @Suppress("UNCHECKED_CAST")
+                        return HistoryEntryContext(SnapShotContextImpl(database, snapShot2), it as T)
+                    }
+                }
+            }
+            return null
+        }
+    }
 
     @Volatile
     private var _snapShot: SnapShot<ROOT> = snapShot
@@ -24,12 +47,7 @@ class SnapShotContextImpl<ROOT : Base>(override val database: Database<ROOT>, sn
     }
 
     override fun <T : Base> T.getVersionBefore(): HistoryEntryContext<T, ROOT>? {
-        val snapShot1 = snapShot.snapShotHistory[this.snapShotVersion - 1]
-        snapShot1?.allEntries?.get(this.id)?.let {
-            @Suppress("UNCHECKED_CAST")
-            return HistoryEntryContext(SnapShotContextImpl<ROOT>(database, snapShot1), it as T)
-        }
-        return null
+        return getVersionBefore(this, snapShot, database)
     }
 
 

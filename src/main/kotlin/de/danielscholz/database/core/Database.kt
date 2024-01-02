@@ -3,6 +3,8 @@ package de.danielscholz.database.core
 import de.danielscholz.database.Item
 import de.danielscholz.database.ItemGroup
 import de.danielscholz.database.Shop
+import de.danielscholz.database.core.context.SnapShotContext
+import de.danielscholz.database.core.context.SnapShotContextImpl
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.polymorphic
@@ -24,11 +26,11 @@ class Database<ROOT : Base>(init: ROOT) {
     }
 
 
-    internal fun writeDiff() = true
+    internal fun writeDiff() = true // TODO
 
     val serializersModule = SerializersModule {
         polymorphic(Base::class) {
-            subclass(Shop::class)
+            subclass(Shop::class) // TODO
             subclass(ItemGroup::class)
             subclass(Item::class)
         }

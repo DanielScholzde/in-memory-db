@@ -1,4 +1,10 @@
-package de.danielscholz.database.core
+package de.danielscholz.database.core.context
+
+import de.danielscholz.database.core.Base
+import de.danielscholz.database.core.Database
+import de.danielscholz.database.core.ID
+import de.danielscholz.database.core.SNAPSHOT_VERSION
+import de.danielscholz.database.core.SnapShot
 
 
 interface SnapShotContext<ROOT : Base> {

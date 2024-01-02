@@ -1,5 +1,6 @@
-package de.danielscholz.database.core
+package de.danielscholz.database.core.util
 
+import de.danielscholz.database.core.Base
 import kotlinx.collections.immutable.PersistentMap
 
 

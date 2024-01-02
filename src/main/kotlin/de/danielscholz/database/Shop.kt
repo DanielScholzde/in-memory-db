@@ -3,10 +3,10 @@
 package de.danielscholz.database
 
 import de.danielscholz.database.core.Base
-import de.danielscholz.database.core.ChangeContext
 import de.danielscholz.database.core.ID
 import de.danielscholz.database.core.SNAPSHOT_VERSION
-import de.danielscholz.database.core.SnapShotContext
+import de.danielscholz.database.core.context.ChangeContext
+import de.danielscholz.database.core.context.SnapShotContext
 import de.danielscholz.database.serializer.PersistentSetSerializer
 import kotlinx.collections.immutable.PersistentSet
 import kotlinx.collections.immutable.persistentSetOf

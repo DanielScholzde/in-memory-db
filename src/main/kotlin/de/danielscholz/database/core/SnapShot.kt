@@ -2,6 +2,7 @@ package de.danielscholz.database.core
 
 import com.google.common.collect.MultimapBuilder
 import com.google.common.collect.SetMultimap
+import de.danielscholz.database.core.util.addOrReplace
 import kotlinx.collections.immutable.PersistentMap
 import kotlinx.collections.immutable.PersistentSet
 import kotlinx.collections.immutable.persistentMapOf
@@ -13,16 +14,22 @@ import kotlinx.serialization.Transient
 
 @Serializable
 class SnapShot<ROOT : Base> private constructor(
-    val version: Long = 0,
+    val version: Long,
     internal val root: ROOT,
-    internal val allEntries: PersistentMap<ID, Base> = persistentMapOf(),
+    internal val allEntries: PersistentMap<ID, Base>,
     val changed: PersistentSet<Base>,
     val snapShotHistory: PersistentMap<SNAPSHOT_VERSION, SnapShot<ROOT>>
 ) {
 
     companion object {
         fun <ROOT : Base> init(root: ROOT): SnapShot<ROOT> {
-            return SnapShot(root = root, changed = persistentSetOf(), snapShotHistory = persistentMapOf())
+            return SnapShot(
+                root = root,
+                version = 0,
+                changed = persistentSetOf(),
+                allEntries = persistentMapOf(),
+                snapShotHistory = persistentMapOf()
+            )
         }
     }
 
@@ -30,6 +37,7 @@ class SnapShot<ROOT : Base> private constructor(
     internal val backReferences: SetMultimap<ID, ID> = MultimapBuilder.hashKeys().hashSetValues().build()
 
     init {
+        // TODO
         allEntries.values.forEach {
             it.referencedIds.forEach { refId ->
                 backReferences.put(refId, it.id)
