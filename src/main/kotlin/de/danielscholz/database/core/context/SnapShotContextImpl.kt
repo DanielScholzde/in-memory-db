@@ -4,6 +4,7 @@ import com.google.common.collect.MultimapBuilder
 import com.google.common.collect.SetMultimap
 import de.danielscholz.database.core.Base
 import de.danielscholz.database.core.Database
+import de.danielscholz.database.core.EntryNotFoundException
 import de.danielscholz.database.core.ID
 import de.danielscholz.database.core.SnapShot
 import kotlinx.serialization.encodeToString
@@ -14,22 +15,24 @@ import java.nio.file.Files
 class SnapShotContextImpl<ROOT : Base>(override val database: Database<ROOT>, snapShot: SnapShot<ROOT>) : SnapShotContext<ROOT> {
 
     companion object {
+
         fun <T : Base, ROOT : Base> getVersionBefore(entry: T, snapShot: SnapShot<ROOT>, database: Database<ROOT>): HistoryEntryContext<T, ROOT>? {
-            val snapShot1 = snapShot.snapShotHistory[entry.snapShotVersion - 1]
-            snapShot1?.allEntries?.get(entry.id)?.let {
-                if (it.snapShotVersion == snapShot1.version) {
+            val snapShotBefore = snapShot.snapShotHistory[entry.snapShotVersion - 1]
+            snapShotBefore?.allEntries?.get(entry.id)?.let { entryBefore ->
+                if (entryBefore.snapShotVersion == snapShotBefore.version) {
                     @Suppress("UNCHECKED_CAST")
-                    return HistoryEntryContext(SnapShotContextImpl(database, snapShot1), it as T)
+                    return HistoryEntryContext(SnapShotContextImpl(database, snapShotBefore), entryBefore as T)
                 } else {
-                    val snapShot2 = snapShot.snapShotHistory[it.snapShotVersion]
-                    snapShot2?.allEntries?.get(entry.id)?.let {
+                    val snapShotHist = snapShot.snapShotHistory[entryBefore.snapShotVersion]
+                    snapShotHist?.allEntries?.get(entry.id)?.let { entryHist ->
                         @Suppress("UNCHECKED_CAST")
-                        return HistoryEntryContext(SnapShotContextImpl(database, snapShot2), it as T)
+                        return HistoryEntryContext(SnapShotContextImpl(database, snapShotHist), entryHist as T)
                     }
                 }
             }
             return null
         }
+
     }
 
 
@@ -43,7 +46,8 @@ class SnapShotContextImpl<ROOT : Base>(override val database: Database<ROOT>, sn
     override val root: ROOT get() = snapShot.rootId.resolve() as ROOT
 
 
-    override fun ID.resolve() = snapShot.allEntries[this] ?: throw Exception("Entry could not be found!")
+    override fun ID.resolve() =
+        snapShot.allEntries[this] ?: throw EntryNotFoundException("Entry with id $this could not be found within snapShot ${snapShot.version}!")
 
 
     override fun Base.getReferencedBy(): Collection<Base> {
@@ -60,21 +64,45 @@ class SnapShotContextImpl<ROOT : Base>(override val database: Database<ROOT>, sn
     }
 
 
-    override fun <T> update(update: ChangeContext<ROOT>.() -> T): T {
+    override fun <T> update(update: ChangeContext<ROOT>.() -> T): T { // result may contain one or many references
         return database.makeChange {
 
-            val snapShot = database.snapShot // snapShot may be newer than _snapShot!
+            val snapShot = database.snapShot // database.snapShot may be newer than _snapShot!
             val changeContext = ChangeContextImpl(database, snapShot)
 
             val result = changeContext.update()
 
             if (changeContext.changed.isNotEmpty()) {
 
+                val newEntries = mutableSetOf<Base>()
+                val changedEntries = mutableSetOf<Base>()
+                val backReferences: SetMultimap<ID, ID> = MultimapBuilder.hashKeys().hashSetValues().build()
+
+                changeContext.changed.values.forEach {
+                    val old = snapShot.allEntries[it.id]
+
+                    it.referencedIds.forEach { refId ->
+                        backReferences.put(refId, it.id)
+                    }
+
+                    if (old != null) {
+                        val removed = old.referencedIds - it.referencedIds
+                    } else {
+                        newEntries += it
+                    }
+                }
+
+                if (newEntries.isNotEmpty()) {
+                    newEntries.forEach {
+                        // TODO
+                    }
+                }
+
                 val changedSnapShot = snapShot.copyIntern(snapShot.rootId, changeContext.changed.values)
 
                 changeContext.changed.forEach {
-                    if (it.value.snapShotVersion != changedSnapShot.version) throw Exception()
-                    if (it.value.version < 0) throw Exception()
+                    if (it.value.snapShotVersion != changedSnapShot.version) throw Exception("Internal error")
+                    if (it.value.version < 0) throw Exception("Internal error")
                 }
 
                 if (database.writeToFile) {

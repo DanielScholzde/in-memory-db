@@ -25,13 +25,14 @@ class Test1 {
 
     @BeforeEach
     fun init() {
-        database = Database("Shop", Shop.empty()).apply {
+        database = Database("ShopDB", Shop.empty()).apply {
             addSerializationClasses {
                 subclass(Shop::class)
                 subclass(ItemGroup::class)
                 subclass(Item::class)
             }
             writeToFile = false
+
             update {
                 val soap = Item.of(title = "Soap", price = 1.79)
                 val group1 = ItemGroup.of(title = "Group1")
@@ -44,8 +45,8 @@ class Test1 {
                                 .addItem(Item.of(title = "Melon", price = 0.99))
                         )
                     )
-                this@Test1.soapRef = soap.asRef()
-                this@Test1.group1Ref = group1.asRef()
+                soapRef = soap.asRef()
+                group1Ref = group1.asRef()
             }
         }
     }
@@ -211,8 +212,8 @@ class Test1 {
                             .addItem(Item.of(title = "Melon", price = 0.99))
                     )
                 )
-            this@Test1.soapRef = soap.asRef()
-            this@Test1.group1Ref = group1.asRef()
+            soapRef = soap.asRef()
+            group1Ref = group1.asRef()
         }
         database.update {
             val milk = Item.of(title = "Milk", price = 1.29)
@@ -240,34 +241,52 @@ class Test1 {
 
     @Test
     fun performanceTest() {
+        // jvm warm up
+        repeat(100) {
+            database.update {
+                group1Ref.get().addItems(
+                    (1..1_000).map { Item.of("Test $it", it.toDouble()) }.toSet()
+                )
+            }
+            if (it % 10 == 0) init()
+        }
+        repeat(10_000) {
+            database.perform {
+                group1Ref.get().items()
+            }
+        }
+
+        init() // reset DB
+
+        // performance test
         measureTime {
             database.update {
                 group1Ref.get().addItems(
-                    (1..10_000).map { Item.of("Test $it", it.toDouble()) }.toSet()
+                    (1..1_000).map { Item.of("Test $it", it.toDouble()) }.toSet()
                 )
             }
         }.let { duration ->
-            println("Insert 10.000 Items: $duration")
+            println("Insert 1.000 Items: $duration")
         }
 
         measureTime {
-            database.update {
-                group1Ref.get().addItem(Item.of("Test ABC", 1.99))
+            repeat(1_000) {
+                database.update {
+                    group1Ref.get().addItem(Item.of("Test ABC", 1.99))
+                }
             }
         }.let { duration ->
-            println("Insert 1 Item: $duration")
+            println("Insert 1 Item: ${duration / 1_000}")
         }
 
-        (1..100).forEach {
-            measureTime {
+        measureTime {
+            repeat(1_000) {
                 database.perform {
                     group1Ref.get().items()
                 }
-            }.let { duration ->
-                if (it == 100) {
-                    println("get all Items: $duration")
-                }
             }
+        }.let { duration ->
+            println("get items of group1: ${duration / 1_000}")
         }
     }
 

@@ -2,6 +2,7 @@ package de.danielscholz.database.core.context
 
 import de.danielscholz.database.core.Base
 import de.danielscholz.database.core.Database
+import de.danielscholz.database.core.EntryNotFoundException
 import de.danielscholz.database.core.ID
 import de.danielscholz.database.core.SNAPSHOT_VERSION
 import de.danielscholz.database.core.SnapShot
@@ -9,15 +10,18 @@ import de.danielscholz.database.core.SnapShot
 
 class ChangeContextImpl<ROOT : Base>(override val database: Database<ROOT>, override val snapShot: SnapShot<ROOT>) : ChangeContext<ROOT> {
 
-    internal val changed: MutableMap<ID, Base> = mutableMapOf()
+    internal val changed = mutableMapOf<ID, Base>()
 
 
     @Suppress("UNCHECKED_CAST")
     override val root: ROOT
-        get() = snapShot.rootId.resolve() as ROOT
+        get() = snapShot.rootId.resolve() as ROOT // this is only valid when root ID never changes
 
 
-    override fun ID.resolve() = changed[this] ?: snapShot.allEntries[this] ?: throw Exception()
+    override fun ID.resolve() =
+        changed[this]
+            ?: snapShot.allEntries[this]
+            ?: throw EntryNotFoundException("Entry with id $this could not be found within snapShot ${snapShot.version}!")
 
 
     override fun <T : Base> T.asRef(): Reference<ROOT, T> {
@@ -29,7 +33,7 @@ class ChangeContextImpl<ROOT : Base>(override val database: Database<ROOT>, over
     override fun <T : Base> T.persist(): T {
         val existing = snapShot.allEntries[this.id]
         if (existing == this) return this
-        if (existing != null && this.version <= existing.version) throw Exception()
+        if (existing != null && this.version <= existing.version) throw Exception("Updating an entry with an old version is not possible")
         changed[this.id] = this
         return this
     }
@@ -38,6 +42,9 @@ class ChangeContextImpl<ROOT : Base>(override val database: Database<ROOT>, over
     override val nextSnapShotVersion: SNAPSHOT_VERSION
         get() = snapShot.version + 1
 
+    /**
+     * Checks if given entry is the last (current) version
+     */
     override fun Base.checkIsCurrent() {
         if (this.asRef().get() != this) throw Exception()
     }
@@ -78,7 +85,7 @@ class ChangeContextImpl<ROOT : Base>(override val database: Database<ROOT>, over
 
 
     override fun <T> update(update: ChangeContext<ROOT>.() -> T): T {
-        throw Exception()
+        throw Exception("a nested update is not possible!")
     }
 
 }
