@@ -9,6 +9,10 @@ import de.danielscholz.database.core.ID
 import de.danielscholz.database.core.SnapShot
 
 
+/**
+ * Context holding one database SnapShot.
+ * All methods and values provided here are thread-safe.
+ */
 class SnapShotContextImpl<ROOT : Base>(override val database: Database<ROOT>, snapShot: SnapShot<ROOT>) : SnapShotContext<ROOT> {
 
     companion object {

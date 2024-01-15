@@ -14,6 +14,10 @@ import kotlinx.collections.immutable.mutate
 import kotlinx.collections.immutable.persistentSetOf
 
 
+/**
+ * Context for an update.
+ * All methods should only be called by one thread!
+ */
 class ChangeContextImpl<ROOT : Base>(
     override val database: Database<ROOT>,
     override val snapShot: SnapShot<ROOT>

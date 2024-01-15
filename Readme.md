@@ -30,8 +30,12 @@
 
 ## Disadvantages:
 
-- the entire database is kept in memory; currently no lazy loading of data possible
-- json write speed to disc is currently not yet good
+- The entire database is kept in memory; currently no lazy loading of data possible
+- JSON write speed to disc is currently not yet as good as expected
+- The database is currently designed for a small to medium-sized database with few updates
+    - write to disc is a limiting factor
+    - It is planned to configure a write cache and combine several database diffs into one to improve the updates per second (both have the
+      disadvantage that they collide with an 'atomic' update)
 
 ### Technical details:
 
@@ -59,6 +63,7 @@
 - Code generation of methods within database model (entity classes)
 - Tests with a larger database model
 - Create more performance tests
+- Design and create customizable (immutable) indices
 
 ## Example:
 

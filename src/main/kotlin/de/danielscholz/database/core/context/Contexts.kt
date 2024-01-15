@@ -8,6 +8,10 @@ import de.danielscholz.database.core.SNAPSHOT_VERSION
 import de.danielscholz.database.core.SnapShot
 
 
+/**
+ * Context holding one database SnapShot.
+ * All methods and values provided here are thread-safe.
+ */
 interface SnapShotContext<ROOT : Base> {
 
     val context: SnapShotContext<ROOT>
@@ -52,7 +56,10 @@ interface SnapShotContext<ROOT : Base> {
 
 }
 
-
+/**
+ * Context for an update.
+ * All methods should only be called by one thread!
+ */
 interface ChangeContext<ROOT : Base> : SnapShotContext<ROOT> {
 
     context(SnapShotContext<ROOT>)
