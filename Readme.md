@@ -1,4 +1,4 @@
-# Immutable, snapshot-based In-memory Database
+# Snapshot-based in-memory database with immutable data structures
 
 ## Advantages:
 
@@ -32,7 +32,7 @@
 
 - The entire database is kept in memory; currently no lazy loading of data possible
 - JSON write speed to disc is currently not yet as good as expected
-- The database is currently designed for a small to medium-sized database with few updates
+- The database is currently designed for a small to medium-sized database with few updates but many reads
     - write to disc is a limiting factor
     - It is planned to configure a write cache and combine several database diffs into one to improve the updates per second (both have the
       disadvantage that they collide with an 'atomic' update)
