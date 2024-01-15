@@ -45,6 +45,8 @@ class Item private constructor(
         return this
     }
 
+    // there is no changeIntern method because there are no external references
+
     // will be generated in future
     context(SnapShotContext<Shop>)
     fun itemGroup(): ItemGroup {

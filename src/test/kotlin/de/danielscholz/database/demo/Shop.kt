@@ -38,6 +38,13 @@ class Shop private constructor(
 
     // will be generated in future
     context(ChangeContext<Shop>)
+    fun change(title: String = this.title): Shop {
+        return changeIntern(title = title)
+    }
+
+    // will be generated in future
+    // private changeIntern method contains itemGroupIds (in general: all external references)
+    context(ChangeContext<Shop>)
     private fun changeIntern(title: String = this.title, itemGroupIds: PersistentSet<ID> = this.itemGroupIds): Shop {
         this.checkIsCurrent()
         if (title != this.title || itemGroupIds != this.itemGroupIds) {
@@ -45,12 +52,6 @@ class Shop private constructor(
             return Shop(id, version + 1, nextSnapShotVersion, title, itemGroupIds).persist()
         }
         return this
-    }
-
-    // will be generated in future
-    context(ChangeContext<Shop>)
-    fun change(title: String = this.title): Shop {
-        return changeIntern(title = title)
     }
 
     // will be generated in future

@@ -39,6 +39,14 @@ class ItemGroup private constructor(
     }
 
     // will be generated in future
+    // public change method must not contain itemIds
+    context(ChangeContext<Shop>)
+    fun change(title: String = this.title): ItemGroup {
+        return changeIntern(title = title)
+    }
+
+    // will be generated in future
+    // private changeIntern method contains itemIds (in general: all external references)
     context(ChangeContext<Shop>)
     private fun changeIntern(title: String = this.title, itemIds: PersistentSet<ID> = this.itemIds): ItemGroup {
         this.checkIsCurrent()
@@ -47,12 +55,6 @@ class ItemGroup private constructor(
             return ItemGroup(id, version + 1, nextSnapShotVersion, title, itemIds).persist()
         }
         return this
-    }
-
-    // will be generated in future
-    context(ChangeContext<Shop>)
-    fun change(title: String = this.title): ItemGroup {
-        return changeIntern(title = title)
     }
 
     // will be generated in future
