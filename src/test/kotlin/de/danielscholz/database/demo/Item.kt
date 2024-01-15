@@ -28,14 +28,14 @@ class Item private constructor(
 ) : Base() {
 
     companion object {
-        // generated
+        // will be generated in future
         context(ChangeContext<Shop>)
         fun of(title: String, price: Double): Item {
             return Item(database.getNextId(), 0, nextSnapShotVersion, title, price).persist()
         }
     }
 
-    // generated
+    // will be generated in future
     context(ChangeContext<Shop>)
     fun change(title: String = this.title, price: Double = this.price): Item {
         this.checkIsCurrent()
@@ -45,19 +45,19 @@ class Item private constructor(
         return this
     }
 
-    // generated
+    // will be generated in future
     context(SnapShotContext<Shop>)
-    fun getItemGroup(): ItemGroup {
+    fun itemGroup(): ItemGroup {
         this.checkIsCurrent()
         return this.getReferencedBy(0).first() as ItemGroup
     }
 
-    // generated
+    // will be generated in future
     override fun toString(): String {
         return "Item(id=$id, version=$version, snapShotVersion=$snapShotVersion, title='$title', price=$price)"
     }
 
-    // generated
+    // will be generated in future
     override val referencedIds: ImmutableMap<EXT_REF_IDX, ImmutableSet<ID>> get() = persistentMapOf()
 
 }

@@ -59,9 +59,9 @@ class Test1 {
             update {
                 val item = Item.of(title = "Milk", price = 1.29)
                 val updated = group1Ref.get().addItem(item)
-                item.getItemGroup() shouldBe updated
+                item.itemGroup() shouldBe updated
             }
-            group1Ref.get().items().first { it.title == "Milk" }.getItemGroup() shouldBe group1Ref.get()
+            group1Ref.get().items().first { it.title == "Milk" }.itemGroup() shouldBe group1Ref.get()
         }
     }
 
@@ -146,14 +146,14 @@ class Test1 {
                 itemHist1.getVersionBefore()!!.perform { itemHist2 ->
                     println("SnapShot.version: ${snapShot.version}")
                     itemHist2.print().price shouldBe 1.79
-                    itemHist2.getItemGroup().print().itemIds.size shouldBe 1
+                    itemHist2.itemGroup().print().itemIds.size shouldBe 1
                     root.print().title shouldBe "Shop 1"
                 }
             }
 
             soapRef.get().getVersionsBefore().performEach {
                 println(it.price)
-                println(it.getItemGroup().getShop().title)
+                println(it.itemGroup().shop().title)
             }
         }
     }
@@ -215,7 +215,7 @@ class Test1 {
                 soap.change(price = 1.49)
             }
             assertThrows<Exception> {
-                soap.getItemGroup()
+                soap.itemGroup()
             }
         }
     }

@@ -31,13 +31,13 @@ class Shop private constructor(
 ) : Base() {
 
     companion object {
-        // generated
+        // will be generated in future
         fun empty(): Shop {
             return Shop(1, 0, 0, "", persistentSetOf())
         }
     }
 
-    // generated
+    // will be generated in future
     context(ChangeContext<Shop>)
     private fun changeIntern(title: String = this.title, itemGroupIds: PersistentSet<ID> = this.itemGroupIds): Shop {
         this.checkIsCurrent()
@@ -48,13 +48,13 @@ class Shop private constructor(
         return this
     }
 
-    // generated
+    // will be generated in future
     context(ChangeContext<Shop>)
     fun change(title: String = this.title): Shop {
         return changeIntern(title = title)
     }
 
-    // generated
+    // will be generated in future
     context(SnapShotContext<Shop>)
     fun itemGroups(): Collection<ItemGroup> {
         this.checkIsCurrent()
@@ -65,36 +65,36 @@ class Shop private constructor(
     fun itemGroupsSorted(): List<ItemGroup> = itemGroups().sortedBy { it.id }
 
 
-    // generated
+    // will be generated in future
     context(ChangeContext<Shop>)
     fun addItemGroup(itemGroup: ItemGroup): Shop {
         return changeIntern(itemGroupIds = itemGroupIds.add(itemGroup.id))
     }
 
-    // generated
+    // will be generated in future
     context(ChangeContext<Shop>)
     fun addItemGroups(itemGroups: Set<ItemGroup>): Shop {
         return changeIntern(itemGroupIds = itemGroupIds.addAll(itemGroups.map { it.id }))
     }
 
-    // generated
+    // will be generated in future
     context(ChangeContext<Shop>)
     fun removeItemGroup(itemGroup: ItemGroup): Shop {
         return changeIntern(itemGroupIds = itemGroupIds.remove(itemGroup.id))
     }
 
-    // generated
+    // will be generated in future
     context(ChangeContext<Shop>)
     fun removeItemGroups(itemGroups: Set<ItemGroup>): Shop {
         return changeIntern(itemGroupIds = itemGroupIds.removeAll(itemGroups.map { it.id }))
     }
 
-    // generated
+    // will be generated in future
     override fun toString(): String {
         return "Shop(id=$id, version=$version, snapShotVersion=$snapShotVersion, title='$title', itemGroupIds=$itemGroupIds)"
     }
 
-    // generated
+    // will be generated in future
     override val referencedIds: ImmutableMap<EXT_REF_IDX, ImmutableSet<ID>> get() = persistentMapOf(0.toByte() to itemGroupIds)
 
 }
