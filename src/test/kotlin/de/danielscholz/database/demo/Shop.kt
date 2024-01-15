@@ -51,6 +51,7 @@ class Shop private constructor(
     // generated
     context(SnapShotContext<Shop>)
     fun itemGroups(): Collection<ItemGroup> {
+        this.checkIsCurrent()
         return itemGroupIds.map { it.resolve() as ItemGroup }
     }
 

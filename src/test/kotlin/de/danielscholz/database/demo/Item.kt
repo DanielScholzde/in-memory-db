@@ -45,6 +45,7 @@ class Item private constructor(
     // generated
     context(SnapShotContext<Shop>)
     fun getItemGroup(): ItemGroup {
+        this.checkIsCurrent()
         return this.getReferencedBy().filterIsInstance<ItemGroup>().first()
     }
 

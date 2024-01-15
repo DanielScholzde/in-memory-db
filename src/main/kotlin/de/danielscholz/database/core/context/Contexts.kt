@@ -19,6 +19,11 @@ interface SnapShotContext<ROOT : Base> {
 
     fun <T : Base> T.asRef(): Reference<ROOT, T>
 
+    /**
+     * Checks if given entry has the same version as entry within SnapShot
+     */
+    fun Base.checkIsCurrent()
+
     fun Base.getReferencedBy(): Collection<Base>
 
     fun <T : Base> T.getVersionBefore(): HistoryEntryContext<T, ROOT>?
@@ -51,7 +56,5 @@ interface ChangeContext<ROOT : Base> : SnapShotContext<ROOT> {
     fun <T : Base> T.persist(): T
 
     val nextSnapShotVersion: SNAPSHOT_VERSION
-
-    fun Base.checkIsCurrent()
 
 }

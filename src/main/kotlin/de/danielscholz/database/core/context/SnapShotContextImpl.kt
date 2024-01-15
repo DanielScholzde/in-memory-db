@@ -7,16 +7,18 @@ import de.danielscholz.database.core.Database
 import de.danielscholz.database.core.EntryNotFoundException
 import de.danielscholz.database.core.ID
 import de.danielscholz.database.core.SnapShot
-import kotlinx.serialization.encodeToString
-import java.io.File
-import java.nio.file.Files
 
 
 class SnapShotContextImpl<ROOT : Base>(override val database: Database<ROOT>, snapShot: SnapShot<ROOT>) : SnapShotContext<ROOT> {
 
     companion object {
 
-        fun <T : Base, ROOT : Base> getVersionBefore(entry: T, snapShot: SnapShot<ROOT>, database: Database<ROOT>): HistoryEntryContext<T, ROOT>? {
+        // Method needed to be within companion object, because it is used from ChangeContext too
+        internal fun <T : Base, ROOT : Base> getVersionBefore(
+            entry: T,
+            snapShot: SnapShot<ROOT>,
+            database: Database<ROOT>
+        ): HistoryEntryContext<T, ROOT>? {
             val snapShotBefore = snapShot.snapShotHistory[entry.snapShotVersion - 1]
             snapShotBefore?.allEntries?.get(entry.id)?.let { entryBefore ->
                 if (entryBefore.snapShotVersion == snapShotBefore.version) {
@@ -37,10 +39,8 @@ class SnapShotContextImpl<ROOT : Base>(override val database: Database<ROOT>, sn
 
 
     @Volatile
-    private var _snapShot: SnapShot<ROOT> = snapShot
-
-    override val snapShot: SnapShot<ROOT>
-        get() = _snapShot
+    override var snapShot: SnapShot<ROOT> = snapShot
+        private set
 
     @Suppress("UNCHECKED_CAST")
     override val root: ROOT get() = snapShot.rootId.resolve() as ROOT
@@ -59,13 +59,19 @@ class SnapShotContextImpl<ROOT : Base>(override val database: Database<ROOT>, sn
         return Reference(this.id)
     }
 
+    override fun Base.checkIsCurrent() {
+        if (this.asRef().get() != this) throw Exception("Used entry $this is an old version")
+    }
+
     override fun <T : Base> T.getVersionBefore(): HistoryEntryContext<T, ROOT>? {
         return getVersionBefore(this, snapShot, database)
     }
 
 
     override fun <T> update(update: ChangeContext<ROOT>.() -> T): T { // result may contain one or many references
-        return database.makeChange {
+        var changedSnapShot: SnapShot<ROOT>? = null
+
+        val makeChange = database.makeChange {
 
             val snapShot = database.snapShot // database.snapShot may be newer than _snapShot!
             val changeContext = ChangeContextImpl(database, snapShot)
@@ -98,31 +104,22 @@ class SnapShotContextImpl<ROOT : Base>(override val database: Database<ROOT>, sn
                     }
                 }
 
-                val changedSnapShot = snapShot.copyIntern(snapShot.rootId, changeContext.changed.values)
+                changedSnapShot = snapShot.copyIntern(snapShot.rootId, changeContext.changed.values)
 
                 changeContext.changed.forEach {
-                    if (it.value.snapShotVersion != changedSnapShot.version) throw Exception("Internal error")
+                    if (it.value.snapShotVersion != changedSnapShot!!.version) throw Exception("Internal error")
                     if (it.value.version < 0) throw Exception("Internal error")
                 }
 
-                if (database.writeToFile) {
-                    if (database.writeDiff(changedSnapShot.version)) {
-                        val file = File("database_${database.name}_v${changedSnapShot.version}_diff.json")
-                        Files.writeString(file.toPath(), database.json.encodeToString(changedSnapShot.toDiffSerialization()))
-                        println(file.name)
-                    } else {
-                        val file = File("database_${database.name}_v${changedSnapShot.version}_full.json")
-                        Files.writeString(file.toPath(), database.json.encodeToString(changedSnapShot.toFullSerialization()))
-                        println(file.name)
-                    }
-                }
-
-                database.snapShot = changedSnapShot
-                _snapShot = changedSnapShot
+                Database.MakeChangeResult(changedSnapShot, result)
+            } else {
+                Database.MakeChangeResult(null, result)
             }
-
-            result
         }
+        changedSnapShot?.let {
+            snapShot = it
+        }
+        return makeChange
     }
 
 }

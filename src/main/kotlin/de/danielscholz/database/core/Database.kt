@@ -4,6 +4,7 @@ import de.danielscholz.database.core.context.ChangeContext
 import de.danielscholz.database.core.context.Diff
 import de.danielscholz.database.core.context.SnapShotContext
 import de.danielscholz.database.core.context.SnapShotContextImpl
+import de.danielscholz.database.core.context.toDiffSerialization
 import de.danielscholz.database.core.context.toFullSerialization
 import kotlinx.collections.immutable.toPersistentSet
 import kotlinx.serialization.encodeToString
@@ -25,12 +26,13 @@ typealias SNAPSHOT_VERSION = Long
 
 class Database<ROOT : Base>(val name: String, private val root: ROOT) {
 
-    private val idGen = AtomicLong(root.id) // global unique? or database unique?
+    private val idGen = AtomicLong(root.id)
 
     fun getNextId() = idGen.incrementAndGet()
 
     @Volatile
-    internal var snapShot: SnapShot<ROOT> = SnapShot.init(root) // TODO private set
+    internal var snapShot: SnapShot<ROOT> = SnapShot.init(root)
+        private set
 
 
     @OptIn(ExperimentalContracts::class)
@@ -48,31 +50,36 @@ class Database<ROOT : Base>(val name: String, private val root: ROOT) {
         }
     }
 
-    fun writeFullSnapShot() {
-        val snapShot1 = snapShot
-        val file = File("database_${name}_v${snapShot1.version}_full.json")
-        Files.writeString(file.toPath(), json.encodeToString(snapShot1.toFullSerialization()))
-        println(file.name)
+    internal class MakeChangeResult<ROOT : Base, T>(
+        val changedSnapShot: SnapShot<ROOT>?,
+        val otherResult: T,
+        val performFullWriteOfSnapShot: Boolean = false
+    )
+
+    @Synchronized
+    internal fun <T> makeChange(block: () -> MakeChangeResult<ROOT, T>): T {
+        val makeChangeResult = block()
+        makeChangeResult.changedSnapShot?.let {
+            if (config.writeToFile) {
+                if (makeChangeResult.performFullWriteOfSnapShot || !config.writeDiff(it.version)) {
+                    writeFullSnapShot(it)
+                } else {
+                    writeDiffSnapShot(it)
+                }
+            }
+            snapShot = it
+        }
+        return makeChangeResult.otherResult
     }
 
     fun clearHistory() {
         makeChange {
-            snapShot = snapShot.clearHistory()
-            if (writeToFile) {
-                val file = File("database_${name}_v${snapShot.version}_full.json")
-                Files.writeString(file.toPath(), json.encodeToString(snapShot.toFullSerialization()))
-                println(file.name)
-            }
+            MakeChangeResult(snapShot.clearHistory(), Unit, true)
         }
     }
 
-    @Synchronized
-    internal fun <T> makeChange(block: () -> T): T {
-        return block()
-    }
-
     fun readFromFileSystem() {
-        val snapShot1 = File(".").listFiles()!!.asSequence()
+        val snapShotRead = File(".").listFiles()!!.asSequence()
             .filter { it.name.startsWith("database_${name}_v") && it.name.endsWith("_diff.json") }
             .map { it to it.name.removePrefix("database_${name}_v").removeSuffix("_diff.json").toLong() }
             .sortedBy { it.second }
@@ -91,18 +98,26 @@ class Database<ROOT : Base>(val name: String, private val root: ROOT) {
                 )
             }
 
-        idGen.set(snapShot1.allEntries.maxOf { it.value.id })
-        snapShot = snapShot1
+        idGen.set(snapShotRead.allEntries.maxOf { it.value.id })
+        snapShot = snapShotRead
     }
 
-    @Volatile
-    var writeToFile: Boolean = true
+    fun writeFullSnapShot(snapShot: SnapShot<ROOT> = this.snapShot) {
+        val snapShot1 = snapShot
+        val file = File("database_${name}_v${snapShot1.version}_full.json")
+        Files.writeString(file.toPath(), json.encodeToString(snapShot1.toFullSerialization())) // TODO encodeToStream
+        println(file.name)
+    }
+
+    private fun writeDiffSnapShot(changedSnapShot: SnapShot<ROOT>) {
+        val file = File("database_${name}_v${changedSnapShot.version}_diff.json")
+        Files.writeString(file.toPath(), json.encodeToString(changedSnapShot.toDiffSerialization())) // TODO encodeToStream
+        println(file.name)
+    }
+
 
     @Volatile
-    var writeDiff: (SNAPSHOT_VERSION) -> Boolean = { true } // TODO
-
-    @Volatile
-    var prettyPrint = true
+    var config = Config()
 
     @Volatile
     internal var json = Json {
@@ -111,7 +126,7 @@ class Database<ROOT : Base>(val name: String, private val root: ROOT) {
 
     private fun JsonBuilder.initJson() {
         encodeDefaults = true
-        prettyPrint = this@Database.prettyPrint
+        prettyPrint = config.jsonPrettyPrint
     }
 
     fun addSerializationClasses(block: PolymorphicModuleBuilder<Base>.() -> Unit) {

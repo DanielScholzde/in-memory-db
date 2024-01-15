@@ -52,12 +52,14 @@ class ItemGroup private constructor(
     // generated
     context(SnapShotContext<Shop>)
     fun getShop(): Shop {
+        this.checkIsCurrent()
         return this.getReferencedBy().filterIsInstance<Shop>().first()
     }
 
     // generated
     context(SnapShotContext<Shop>)
     fun items(): Collection<Item> {
+        this.checkIsCurrent()
         return itemIds.map { it.resolve() as Item }
     }
 

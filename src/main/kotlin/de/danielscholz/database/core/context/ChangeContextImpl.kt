@@ -42,11 +42,9 @@ class ChangeContextImpl<ROOT : Base>(override val database: Database<ROOT>, over
     override val nextSnapShotVersion: SNAPSHOT_VERSION
         get() = snapShot.version + 1
 
-    /**
-     * Checks if given entry is the last (current) version
-     */
+
     override fun Base.checkIsCurrent() {
-        if (this.asRef().get() != this) throw Exception()
+        if (this.asRef().get() != this) throw Exception("Used entry $this is an old version")
     }
 
 

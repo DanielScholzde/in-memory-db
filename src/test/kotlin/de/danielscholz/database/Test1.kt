@@ -31,7 +31,7 @@ class Test1 {
                 subclass(ItemGroup::class)
                 subclass(Item::class)
             }
-            writeToFile = false
+            config = config.copy(writeToFile = false)
 
             update {
                 val soap = Item.of(title = "Soap", price = 1.79)
@@ -187,6 +187,34 @@ class Test1 {
                 assertThrows<Exception> {
                     soap.change(price = 1.49)
                 }
+            }
+        }
+    }
+
+    @Test
+    fun test171() {
+        database.perform {
+            val soap = soapRef.get()
+            update {
+                soap.change(price = 1.50)
+            }
+            update {
+                assertThrows<Exception> {
+                    soap.change(price = 1.49)
+                }
+            }
+        }
+    }
+
+    @Test
+    fun test18() {
+        database.perform {
+            val soap = soapRef.get()
+            update {
+                soap.change(price = 1.49)
+            }
+            assertThrows<Exception> {
+                soap.getItemGroup()
             }
         }
     }
