@@ -20,7 +20,7 @@ import kotlinx.collections.immutable.persistentSetOf
  */
 class ChangeContextImpl<ROOT : Base>(
     override val database: Database<ROOT>,
-    override val snapShot: Snapshot<ROOT>
+    override val snapshot: Snapshot<ROOT>
 ) : ChangeContext<ROOT> {
 
     companion object {
@@ -55,18 +55,18 @@ class ChangeContextImpl<ROOT : Base>(
 
     internal val changed = mutableMapOf<ID, Base>()
 
-    internal var backReferences: PersistentMap<BackRef, PersistentSet<ID>> = snapShot.backReferences
+    internal var backReferences: PersistentMap<BackRef, PersistentSet<ID>> = snapshot.backReferences
 
 
     @Suppress("UNCHECKED_CAST")
     override val root: ROOT
-        get() = snapShot.rootId.resolve() as ROOT // this is only valid when root ID never changes
+        get() = snapshot.rootId.resolve() as ROOT // this is only valid when root ID never changes
 
 
     override fun ID.resolve() =
         changed[this]
-            ?: snapShot.allEntries[this]
-            ?: throw EntryNotFoundException("Entry with id $this could not be found within snapShot ${snapShot.version}!")
+            ?: snapshot.allEntries[this]
+            ?: throw EntryNotFoundException("Entry with id $this could not be found within snapshot ${snapshot.version}!")
 
 
     override fun <T : Base> T.asRef(): Reference<ROOT, T> {
@@ -76,7 +76,7 @@ class ChangeContextImpl<ROOT : Base>(
 
     context(ChangeContext<ROOT>)
     override fun <T : Base> T.persist(): T {
-        val existing = snapShot.allEntries[this.id]
+        val existing = snapshot.allEntries[this.id]
         if (existing == this) return this
         if (existing != null && this.version <= existing.version) throw Exception("Updating an entry with an old version is not possible")
         changed[this.id] = this
@@ -85,7 +85,7 @@ class ChangeContextImpl<ROOT : Base>(
 
 
     override val nextSnapshotVersion: SNAPSHOT_VERSION
-        get() = snapShot.version + 1
+        get() = snapshot.version + 1
 
 
     override fun Base.checkIsCurrent() {
@@ -105,13 +105,13 @@ class ChangeContextImpl<ROOT : Base>(
 
     override fun <T : Base> T.getVersionBefore(): HistoryEntryContext<T, ROOT>? {
         if (changed[this.id] != null) {
-            snapShot.allEntries[this.id]?.let {
+            snapshot.allEntries[this.id]?.let {
                 @Suppress("UNCHECKED_CAST")
-                return HistoryEntryContext(SnapshotContextImpl(database, snapShot), it as T)
+                return HistoryEntryContext(SnapshotContextImpl(database, snapshot), it as T)
             }
             return null // entry is new
         }
-        return SnapshotContextImpl.getVersionBefore(this, snapShot, database)
+        return SnapshotContextImpl.getVersionBefore(this, snapshot, database)
     }
 
     override val context: SnapshotContext<ROOT>

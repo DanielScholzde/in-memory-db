@@ -120,7 +120,7 @@ class Database<ROOT : Base>(val name: String, root: ROOT) {
                     diff.rootId,
                     allEntries,
                     diff.changed.toPersistentSet(),
-                    snapShot1?.snapShotHistory?.put(version - 1, snapShot1) ?: persistentMapOf(),
+                    snapShot1?.snapshotHistory?.put(version - 1, snapShot1) ?: persistentMapOf(),
                     backReferences
                 )
             }

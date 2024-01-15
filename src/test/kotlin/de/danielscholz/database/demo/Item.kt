@@ -22,7 +22,7 @@ import kotlinx.serialization.UseSerializers
 class Item private constructor(
     override val id: ID,
     override val version: Long,
-    override val snapShotVersion: SNAPSHOT_VERSION,
+    override val snapshotVersion: SNAPSHOT_VERSION,
     val title: String,
     val price: Double,
 ) : Base() {
@@ -56,7 +56,7 @@ class Item private constructor(
 
     // will be generated in future
     override fun toString(): String {
-        return "Item(id=$id, version=$version, snapShotVersion=$snapShotVersion, title='$title', price=$price)"
+        return "Item(id=$id, version=$version, snapShotVersion=$snapshotVersion, title='$title', price=$price)"
     }
 
     // will be generated in future

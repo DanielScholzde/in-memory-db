@@ -25,7 +25,7 @@ import kotlinx.serialization.UseSerializers
 class ItemGroup private constructor(
     override val id: ID,
     override val version: Long,
-    override val snapShotVersion: SNAPSHOT_VERSION,
+    override val snapshotVersion: SNAPSHOT_VERSION,
     val title: String,
     val itemIds: PersistentSet<ID>,
 ) : Base() {
@@ -95,7 +95,7 @@ class ItemGroup private constructor(
 
     // will be generated in future
     override fun toString(): String {
-        return "ItemGroup(id=$id, version=$version, snapShotVersion=$snapShotVersion, title='$title', itemIds=$itemIds)"
+        return "ItemGroup(id=$id, version=$version, snapShotVersion=$snapshotVersion, title='$title', itemIds=$itemIds)"
     }
 
     // will be generated in future

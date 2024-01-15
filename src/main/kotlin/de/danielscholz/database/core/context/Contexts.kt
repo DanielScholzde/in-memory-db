@@ -18,7 +18,7 @@ interface SnapshotContext<ROOT : Base> {
 
     val database: Database<ROOT>
 
-    val snapShot: Snapshot<ROOT>
+    val snapshot: Snapshot<ROOT>
 
     val root: ROOT
 

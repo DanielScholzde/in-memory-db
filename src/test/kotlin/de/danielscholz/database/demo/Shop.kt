@@ -25,7 +25,7 @@ import kotlinx.serialization.UseSerializers
 class Shop private constructor(
     override val id: ID,
     override val version: Long,
-    override val snapShotVersion: SNAPSHOT_VERSION,
+    override val snapshotVersion: SNAPSHOT_VERSION,
     val title: String,
     val itemGroupIds: PersistentSet<ID>,
 ) : Base() {
@@ -91,7 +91,7 @@ class Shop private constructor(
 
     // will be generated in future
     override fun toString(): String {
-        return "Shop(id=$id, version=$version, snapShotVersion=$snapShotVersion, title='$title', itemGroupIds=$itemGroupIds)"
+        return "Shop(id=$id, version=$version, snapShotVersion=$snapshotVersion, title='$title', itemGroupIds=$itemGroupIds)"
     }
 
     // will be generated in future

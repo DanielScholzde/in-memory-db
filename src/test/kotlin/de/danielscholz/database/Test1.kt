@@ -131,20 +131,20 @@ class Test1 {
             val itemGroup = group1Ref.get()
             itemGroup.itemIds.size shouldBe 2
             itemGroup.getVersionBefore()!!.perform { itemGroupHist1 ->
-                itemGroupHist1.print("1: ").snapShotVersion shouldBe 1
+                itemGroupHist1.print("1: ").snapshotVersion shouldBe 1
                 itemGroupHist1.itemIds.size shouldBe 1
             }
 
-            println("Snapshot.version: ${snapShot.version}")
+            println("Snapshot.version: ${snapshot.version}")
             soapRef.get().print().price shouldBe 3.99
             root.print().title shouldBe "My Shop"
 
             soapRef.get().getVersionBefore()!!.perform { itemHist1 ->
-                println("Snapshot.version: ${snapShot.version}")
+                println("Snapshot.version: ${snapshot.version}")
                 itemHist1.print().price shouldBe 2.99
 
                 itemHist1.getVersionBefore()!!.perform { itemHist2 ->
-                    println("Snapshot.version: ${snapShot.version}")
+                    println("Snapshot.version: ${snapshot.version}")
                     itemHist2.print().price shouldBe 1.79
                     itemHist2.itemGroup().print().itemIds.size shouldBe 1
                     root.print().title shouldBe "Shop 1"
@@ -275,11 +275,11 @@ class Test1 {
         current.changed.map { it.id }.toSet() shouldBe expected.changed.map { it.id }.toSet()
         current.backReferences shouldBe expected.backReferences
 
-        current.snapShotHistory.map { it.key to it.value.allEntries.size } shouldBe expected.snapShotHistory.map { it.key to it.value.allEntries.size }
+        current.snapshotHistory.map { it.key to it.value.allEntries.size } shouldBe expected.snapshotHistory.map { it.key to it.value.allEntries.size }
 
-        current.snapShotHistory.entries.forEach {
+        current.snapshotHistory.entries.forEach {
             val value1 = it.value
-            val value2 = expected.snapShotHistory[it.key]!!
+            val value2 = expected.snapshotHistory[it.key]!!
             checkSnapshots(value1, value2)
         }
     }

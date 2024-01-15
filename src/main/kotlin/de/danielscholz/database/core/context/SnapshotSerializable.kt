@@ -14,7 +14,7 @@ internal class SnapshotSerializable(
     val rootId: ID,
     val allEntries: Set<Base>,
     val changed: Set<ID>,
-    val snapShotHistory: Map<SNAPSHOT_VERSION, SnapshotSerializable>?
+    val snapshotHistory: Map<SNAPSHOT_VERSION, SnapshotSerializable>?
 )
 
 
@@ -24,6 +24,6 @@ internal fun Snapshot<*>.toFullSerialization(depth: Int = 0): SnapshotSerializab
         rootId,
         allEntries.values.toSet(),
         changed.map { it.id }.toSet(),
-        if (depth == 0) snapShotHistory.map { it.key to it.value.toFullSerialization(1) }.toMap() else null
+        if (depth == 0) snapshotHistory.map { it.key to it.value.toFullSerialization(1) }.toMap() else null
     )
 }

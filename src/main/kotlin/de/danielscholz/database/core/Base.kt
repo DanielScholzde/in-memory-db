@@ -12,7 +12,7 @@ abstract class Base {
 
     abstract val version: Long
 
-    abstract val snapShotVersion: SNAPSHOT_VERSION
+    abstract val snapshotVersion: SNAPSHOT_VERSION
 
     abstract val referencedIds: ImmutableMap<EXT_REF_IDX, ImmutableSet<ID>>
 

@@ -20,7 +20,7 @@ class Snapshot<ROOT : Base> internal constructor(
     internal val rootId: ID,
     internal val allEntries: PersistentMap<ID, Base>,
     internal val changed: PersistentSet<Base>,
-    internal val snapShotHistory: PersistentMap<SNAPSHOT_VERSION, Snapshot<ROOT>>,
+    internal val snapshotHistory: PersistentMap<SNAPSHOT_VERSION, Snapshot<ROOT>>,
     internal val backReferences: PersistentMap<BackRef, PersistentSet<ID>>,
 ) {
 
@@ -33,7 +33,7 @@ class Snapshot<ROOT : Base> internal constructor(
                 version = 0,
                 changed = persistentSetOf(root),
                 allEntries = persistentMapOf(root.id to root),
-                snapShotHistory = persistentMapOf(),
+                snapshotHistory = persistentMapOf(),
                 backReferences = persistentMapOf() // TODO may root already contain referenced objects?
             )
         }
@@ -51,7 +51,7 @@ class Snapshot<ROOT : Base> internal constructor(
             rootId,
             allEntries.addOrReplace(changedEntries.toList()),
             changedEntries.toPersistentSet(),
-            snapShotHistory.put(version, this),
+            snapshotHistory.put(version, this),
             backReferences
         )
     }

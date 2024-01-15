@@ -13,26 +13,26 @@ import de.danielscholz.database.core.Snapshot
  * Context holding one database snapshot.
  * All methods and values provided here are thread-safe.
  */
-class SnapshotContextImpl<ROOT : Base>(override val database: Database<ROOT>, snapShot: Snapshot<ROOT>) : SnapshotContext<ROOT> {
+class SnapshotContextImpl<ROOT : Base>(override val database: Database<ROOT>, snapshot: Snapshot<ROOT>) : SnapshotContext<ROOT> {
 
     companion object {
 
         // Method needed to be within companion object, because it is used from ChangeContext too
         internal fun <T : Base, ROOT : Base> getVersionBefore(
             entry: T,
-            snapShot: Snapshot<ROOT>,
+            snapshot: Snapshot<ROOT>,
             database: Database<ROOT>
         ): HistoryEntryContext<T, ROOT>? {
-            val snapShotBefore = snapShot.snapShotHistory[entry.snapShotVersion - 1]
-            snapShotBefore?.allEntries?.get(entry.id)?.let { entryBefore ->
-                if (entryBefore.snapShotVersion == snapShotBefore.version) {
+            val snapshotBefore = snapshot.snapshotHistory[entry.snapshotVersion - 1]
+            snapshotBefore?.allEntries?.get(entry.id)?.let { entryBefore ->
+                if (entryBefore.snapshotVersion == snapshotBefore.version) {
                     @Suppress("UNCHECKED_CAST")
-                    return HistoryEntryContext(SnapshotContextImpl(database, snapShotBefore), entryBefore as T)
+                    return HistoryEntryContext(SnapshotContextImpl(database, snapshotBefore), entryBefore as T)
                 } else {
-                    val snapShotHist = snapShot.snapShotHistory[entryBefore.snapShotVersion]
-                    snapShotHist?.allEntries?.get(entry.id)?.let { entryHist ->
+                    val snapshotHist = snapshot.snapshotHistory[entryBefore.snapshotVersion]
+                    snapshotHist?.allEntries?.get(entry.id)?.let { entryHist ->
                         @Suppress("UNCHECKED_CAST")
-                        return HistoryEntryContext(SnapshotContextImpl(database, snapShotHist), entryHist as T)
+                        return HistoryEntryContext(SnapshotContextImpl(database, snapshotHist), entryHist as T)
                     }
                 }
             }
@@ -43,19 +43,19 @@ class SnapshotContextImpl<ROOT : Base>(override val database: Database<ROOT>, sn
 
 
     @Volatile
-    override var snapShot: Snapshot<ROOT> = snapShot
+    override var snapshot: Snapshot<ROOT> = snapshot
         private set
 
     @Suppress("UNCHECKED_CAST")
-    override val root: ROOT get() = snapShot.rootId.resolve() as ROOT
+    override val root: ROOT get() = snapshot.rootId.resolve() as ROOT
 
 
     override fun ID.resolve() =
-        snapShot.allEntries[this] ?: throw EntryNotFoundException("Entry with id $this could not be found within snapShot ${snapShot.version}!")
+        snapshot.allEntries[this] ?: throw EntryNotFoundException("Entry with id $this could not be found within snapshot ${snapshot.version}!")
 
 
     override fun Base.getReferencedBy(sourceRefIdx: EXT_REF_IDX): Collection<Base> {
-        val referencedByObjectIds = snapShot.backReferences[BackRef(this.id, sourceRefIdx)]
+        val referencedByObjectIds = snapshot.backReferences[BackRef(this.id, sourceRefIdx)]
         return referencedByObjectIds?.map { it.resolve() } ?: setOf()
     }
 
@@ -68,7 +68,7 @@ class SnapshotContextImpl<ROOT : Base>(override val database: Database<ROOT>, sn
     }
 
     override fun <T : Base> T.getVersionBefore(): HistoryEntryContext<T, ROOT>? {
-        return getVersionBefore(this, snapShot, database)
+        return getVersionBefore(this, snapshot, database)
     }
 
     override val context: SnapshotContext<ROOT>
@@ -80,17 +80,17 @@ class SnapshotContextImpl<ROOT : Base>(override val database: Database<ROOT>, sn
 
         val makeChange = database.makeChange {
 
-            val snapShot = database.snapshot // database.snapShot may be newer than _snapShot!
-            val changeContext = ChangeContextImpl(database, snapShot)
+            val snapshot = database.snapshot // database.snapshot may be newer than snapshot from SnapshotContextImpl!
+            val changeContext = ChangeContextImpl(database, snapshot)
 
             val result = changeContext.update()
 
             if (changeContext.changed.isNotEmpty()) {
 
-                changedSnapshot = snapShot.copyIntern(snapShot.rootId, changeContext.changed.values, changeContext.backReferences)
+                changedSnapshot = snapshot.copyIntern(snapshot.rootId, changeContext.changed.values, changeContext.backReferences)
 
                 changeContext.changed.forEach {
-                    if (it.value.snapShotVersion != changedSnapshot!!.version) throw Exception("Internal error")
+                    if (it.value.snapshotVersion != changedSnapshot!!.version) throw Exception("Internal error")
                     if (it.value.version < 0) throw Exception("Internal error")
                 }
 
@@ -100,7 +100,7 @@ class SnapshotContextImpl<ROOT : Base>(override val database: Database<ROOT>, sn
             }
         }
         changedSnapshot?.let {
-            snapShot = it
+            snapshot = it
         }
         return makeChange
     }
