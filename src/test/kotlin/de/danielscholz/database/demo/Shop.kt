@@ -31,7 +31,6 @@ class Shop private constructor(
 ) : Base() {
 
     companion object {
-        // will be generated in future
         fun empty(): Shop {
             return Shop(1, 0, 0, "", persistentSetOf())
         }

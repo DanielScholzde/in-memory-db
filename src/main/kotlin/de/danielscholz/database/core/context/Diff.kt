@@ -15,6 +15,4 @@ internal class Diff(
 )
 
 
-internal fun SnapShot<*>.toDiffSerialization(): Diff {
-    return Diff(time, changed, rootId)
-}
+internal fun SnapShot<*>.toDiffSerialization() = Diff(time, changed, rootId)

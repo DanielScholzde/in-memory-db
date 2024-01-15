@@ -17,7 +17,7 @@
 - Content of database is stored as diff files (format: json) to file system
     - Full database content is written asynchronous to filesystem with a customizable interval (tbd.)
     - All diff files will be appended to data store (no changes are made after write)
-- The entire implementation is very small (less than 1000 LOC), everyone can understand what is going on in a short time
+- The entire implementation is very small (about 500 LOC), everyone can understand what is going on in a short time
 - Support for all (immutable) data types which can be serialized via kotlinx serialization are permitted (custom serializer can be used)
 - Database migrations are supported through Kotlin's support of default values and kotlinx serializations @SerialName annotation. Further changes
   (structural data changes) can be done via a Kotlin migration script which reads all data of the old database format into memory and transform it to
