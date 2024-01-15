@@ -6,33 +6,33 @@ import de.danielscholz.database.core.Database
 import de.danielscholz.database.core.EXT_REF_IDX
 import de.danielscholz.database.core.EntryNotFoundException
 import de.danielscholz.database.core.ID
-import de.danielscholz.database.core.SnapShot
+import de.danielscholz.database.core.Snapshot
 
 
 /**
- * Context holding one database SnapShot.
+ * Context holding one database snapshot.
  * All methods and values provided here are thread-safe.
  */
-class SnapShotContextImpl<ROOT : Base>(override val database: Database<ROOT>, snapShot: SnapShot<ROOT>) : SnapShotContext<ROOT> {
+class SnapshotContextImpl<ROOT : Base>(override val database: Database<ROOT>, snapShot: Snapshot<ROOT>) : SnapshotContext<ROOT> {
 
     companion object {
 
         // Method needed to be within companion object, because it is used from ChangeContext too
         internal fun <T : Base, ROOT : Base> getVersionBefore(
             entry: T,
-            snapShot: SnapShot<ROOT>,
+            snapShot: Snapshot<ROOT>,
             database: Database<ROOT>
         ): HistoryEntryContext<T, ROOT>? {
             val snapShotBefore = snapShot.snapShotHistory[entry.snapShotVersion - 1]
             snapShotBefore?.allEntries?.get(entry.id)?.let { entryBefore ->
                 if (entryBefore.snapShotVersion == snapShotBefore.version) {
                     @Suppress("UNCHECKED_CAST")
-                    return HistoryEntryContext(SnapShotContextImpl(database, snapShotBefore), entryBefore as T)
+                    return HistoryEntryContext(SnapshotContextImpl(database, snapShotBefore), entryBefore as T)
                 } else {
                     val snapShotHist = snapShot.snapShotHistory[entryBefore.snapShotVersion]
                     snapShotHist?.allEntries?.get(entry.id)?.let { entryHist ->
                         @Suppress("UNCHECKED_CAST")
-                        return HistoryEntryContext(SnapShotContextImpl(database, snapShotHist), entryHist as T)
+                        return HistoryEntryContext(SnapshotContextImpl(database, snapShotHist), entryHist as T)
                     }
                 }
             }
@@ -43,7 +43,7 @@ class SnapShotContextImpl<ROOT : Base>(override val database: Database<ROOT>, sn
 
 
     @Volatile
-    override var snapShot: SnapShot<ROOT> = snapShot
+    override var snapShot: Snapshot<ROOT> = snapShot
         private set
 
     @Suppress("UNCHECKED_CAST")
@@ -71,35 +71,35 @@ class SnapShotContextImpl<ROOT : Base>(override val database: Database<ROOT>, sn
         return getVersionBefore(this, snapShot, database)
     }
 
-    override val context: SnapShotContext<ROOT>
+    override val context: SnapshotContext<ROOT>
         get() = this
 
 
     override fun <T> update(update: ChangeContext<ROOT>.() -> T): T { // result may contain one or many references
-        var changedSnapShot: SnapShot<ROOT>? = null
+        var changedSnapshot: Snapshot<ROOT>? = null
 
         val makeChange = database.makeChange {
 
-            val snapShot = database.snapShot // database.snapShot may be newer than _snapShot!
+            val snapShot = database.snapshot // database.snapShot may be newer than _snapShot!
             val changeContext = ChangeContextImpl(database, snapShot)
 
             val result = changeContext.update()
 
             if (changeContext.changed.isNotEmpty()) {
 
-                changedSnapShot = snapShot.copyIntern(snapShot.rootId, changeContext.changed.values, changeContext.backReferences)
+                changedSnapshot = snapShot.copyIntern(snapShot.rootId, changeContext.changed.values, changeContext.backReferences)
 
                 changeContext.changed.forEach {
-                    if (it.value.snapShotVersion != changedSnapShot!!.version) throw Exception("Internal error")
+                    if (it.value.snapShotVersion != changedSnapshot!!.version) throw Exception("Internal error")
                     if (it.value.version < 0) throw Exception("Internal error")
                 }
 
-                Database.MakeChangeResult(changedSnapShot, result)
+                Database.MakeChangeResult(changedSnapshot, result)
             } else {
                 Database.MakeChangeResult(null, result)
             }
         }
-        changedSnapShot?.let {
+        changedSnapshot?.let {
             snapShot = it
         }
         return makeChange

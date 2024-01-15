@@ -14,20 +14,20 @@ import kotlinx.datetime.Instant
 import kotlinx.serialization.UseSerializers
 
 
-class SnapShot<ROOT : Base> internal constructor(
+class Snapshot<ROOT : Base> internal constructor(
     val version: Long,
     val time: Instant,
     internal val rootId: ID,
     internal val allEntries: PersistentMap<ID, Base>,
     internal val changed: PersistentSet<Base>,
-    internal val snapShotHistory: PersistentMap<SNAPSHOT_VERSION, SnapShot<ROOT>>,
+    internal val snapShotHistory: PersistentMap<SNAPSHOT_VERSION, Snapshot<ROOT>>,
     internal val backReferences: PersistentMap<BackRef, PersistentSet<ID>>,
 ) {
 
     companion object {
 
-        fun <ROOT : Base> init(root: ROOT): SnapShot<ROOT> {
-            return SnapShot(
+        fun <ROOT : Base> init(root: ROOT): Snapshot<ROOT> {
+            return Snapshot(
                 rootId = root.id,
                 time = Clock.System.now(),
                 version = 0,
@@ -44,8 +44,8 @@ class SnapShot<ROOT : Base> internal constructor(
         rootId: ID,
         changedEntries: Collection<Base>,
         backReferences: PersistentMap<BackRef, PersistentSet<ID>>,
-    ): SnapShot<ROOT> {
-        return SnapShot(
+    ): Snapshot<ROOT> {
+        return Snapshot(
             version + 1,
             Clock.System.now(),
             rootId,
@@ -56,8 +56,8 @@ class SnapShot<ROOT : Base> internal constructor(
         )
     }
 
-    internal fun clearHistory(): SnapShot<ROOT> {
-        return SnapShot(
+    internal fun clearHistory(): Snapshot<ROOT> {
+        return Snapshot(
             version,
             time,
             rootId,

@@ -8,7 +8,7 @@ import de.danielscholz.database.core.ID
 import de.danielscholz.database.core.SNAPSHOT_VERSION
 import de.danielscholz.database.core.context.ChangeContext
 import de.danielscholz.database.core.context.ChangeContextImpl
-import de.danielscholz.database.core.context.SnapShotContext
+import de.danielscholz.database.core.context.SnapshotContext
 import de.danielscholz.database.serializer.PersistentSetSerializer
 import kotlinx.collections.immutable.ImmutableMap
 import kotlinx.collections.immutable.ImmutableSet
@@ -34,7 +34,7 @@ class ItemGroup private constructor(
         // will be generated in future
         context(ChangeContext<Shop>)
         fun of(title: String): ItemGroup {
-            return ItemGroup(database.getNextId(), 0, nextSnapShotVersion, title, persistentSetOf()).persist()
+            return ItemGroup(database.getNextId(), 0, nextSnapshotVersion, title, persistentSetOf()).persist()
         }
     }
 
@@ -52,26 +52,26 @@ class ItemGroup private constructor(
         this.checkIsCurrent()
         if (title != this.title || itemIds != this.itemIds) {
             (context as ChangeContextImpl).changedReferences(id, 0, this.itemIds, itemIds)
-            return ItemGroup(id, version + 1, nextSnapShotVersion, title, itemIds).persist()
+            return ItemGroup(id, version + 1, nextSnapshotVersion, title, itemIds).persist()
         }
         return this
     }
 
     // will be generated in future
-    context(SnapShotContext<Shop>)
+    context(SnapshotContext<Shop>)
     fun shop(): Shop {
         this.checkIsCurrent()
         return this.getReferencedBy(0).first() as Shop
     }
 
     // will be generated in future
-    context(SnapShotContext<Shop>)
+    context(SnapshotContext<Shop>)
     fun items(): Collection<Item> {
         this.checkIsCurrent()
         return itemIds.map { it.resolve() as Item }
     }
 
-    context(SnapShotContext<Shop>)
+    context(SnapshotContext<Shop>)
     fun itemsSorted(): List<Item> = items().sortedBy { it.id }
 
 

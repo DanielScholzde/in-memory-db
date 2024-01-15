@@ -3,23 +3,23 @@ package de.danielscholz.database.core.context
 import de.danielscholz.database.core.Base
 import de.danielscholz.database.core.ID
 import de.danielscholz.database.core.SNAPSHOT_VERSION
-import de.danielscholz.database.core.SnapShot
+import de.danielscholz.database.core.Snapshot
 import kotlinx.datetime.Instant
 import kotlinx.serialization.Serializable
 
 
 @Serializable
-internal class SnapShotSerializable(
+internal class SnapshotSerializable(
     val time: Instant,
     val rootId: ID,
     val allEntries: Set<Base>,
     val changed: Set<ID>,
-    val snapShotHistory: Map<SNAPSHOT_VERSION, SnapShotSerializable>?
+    val snapShotHistory: Map<SNAPSHOT_VERSION, SnapshotSerializable>?
 )
 
 
-internal fun SnapShot<*>.toFullSerialization(depth: Int = 0): SnapShotSerializable {
-    return SnapShotSerializable(
+internal fun Snapshot<*>.toFullSerialization(depth: Int = 0): SnapshotSerializable {
+    return SnapshotSerializable(
         time,
         rootId,
         allEntries.values.toSet(),

@@ -7,7 +7,7 @@ import de.danielscholz.database.core.EXT_REF_IDX
 import de.danielscholz.database.core.EntryNotFoundException
 import de.danielscholz.database.core.ID
 import de.danielscholz.database.core.SNAPSHOT_VERSION
-import de.danielscholz.database.core.SnapShot
+import de.danielscholz.database.core.Snapshot
 import kotlinx.collections.immutable.PersistentMap
 import kotlinx.collections.immutable.PersistentSet
 import kotlinx.collections.immutable.mutate
@@ -20,7 +20,7 @@ import kotlinx.collections.immutable.persistentSetOf
  */
 class ChangeContextImpl<ROOT : Base>(
     override val database: Database<ROOT>,
-    override val snapShot: SnapShot<ROOT>
+    override val snapShot: Snapshot<ROOT>
 ) : ChangeContext<ROOT> {
 
     companion object {
@@ -84,7 +84,7 @@ class ChangeContextImpl<ROOT : Base>(
     }
 
 
-    override val nextSnapShotVersion: SNAPSHOT_VERSION
+    override val nextSnapshotVersion: SNAPSHOT_VERSION
         get() = snapShot.version + 1
 
 
@@ -107,14 +107,14 @@ class ChangeContextImpl<ROOT : Base>(
         if (changed[this.id] != null) {
             snapShot.allEntries[this.id]?.let {
                 @Suppress("UNCHECKED_CAST")
-                return HistoryEntryContext(SnapShotContextImpl(database, snapShot), it as T)
+                return HistoryEntryContext(SnapshotContextImpl(database, snapShot), it as T)
             }
             return null // entry is new
         }
-        return SnapShotContextImpl.getVersionBefore(this, snapShot, database)
+        return SnapshotContextImpl.getVersionBefore(this, snapShot, database)
     }
 
-    override val context: SnapShotContext<ROOT>
+    override val context: SnapshotContext<ROOT>
         get() = this
 
 

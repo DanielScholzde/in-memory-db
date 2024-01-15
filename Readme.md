@@ -7,7 +7,7 @@
     - Parallel reading with many threads is no problem at all
 - Isolation level is always 'Serializable' (highest possible)
 - Database reports may run over hours with no disadvantages (no blocking of other reads/writes to database)
-    - Reports are consistent because of 'serializable' isolation level (whole report has exactly one consistent SnapShot as source)
+    - Reports are consistent because of 'serializable' isolation level (whole report has exactly one consistent snapshot as source)
 - Circular dependencies are no problem (even self-references are permitted)
     - Bidirectional mapping is supplied out of the box
 - Immutable datastructures
@@ -39,7 +39,7 @@
 
 ### Technical details:
 
-- A database SnapShot is a directed graph of immutable Entities having exactly one root/entry node
+- A database snapshot is a directed graph of immutable Entities having exactly one root/entry node
 - Each node/entity has an ID and a version
 - IDs are unique across whole database (ID sequence generator is shared across all entity classes)
 - Entities have 0..n properties and 0..n (named) references to other Entities
@@ -141,7 +141,7 @@
     database.perform {
         milkRef.get().getVersionsBefore().performEach { milkHist ->
             println(milkHist.price)
-            // other database contents from this historized SnapShot can also be easily retrieved here:
+            // other database contents from this historized snapshot can also be easily retrieved here:
             milkHist.itemGroup().items().forEach {
                 println("${it.name}: ${it.price}")
             }

@@ -3,8 +3,8 @@ package de.danielscholz.database.core
 import de.danielscholz.database.core.context.ChangeContext
 import de.danielscholz.database.core.context.ChangeContextImpl
 import de.danielscholz.database.core.context.Diff
-import de.danielscholz.database.core.context.SnapShotContext
-import de.danielscholz.database.core.context.SnapShotContextImpl
+import de.danielscholz.database.core.context.SnapshotContext
+import de.danielscholz.database.core.context.SnapshotContextImpl
 import de.danielscholz.database.core.context.toDiffSerialization
 import de.danielscholz.database.core.context.toFullSerialization
 import kotlinx.collections.immutable.persistentMapOf
@@ -36,16 +36,16 @@ class Database<ROOT : Base>(val name: String, root: ROOT) {
     fun getNextId() = idGen.incrementAndGet()
 
     @Volatile
-    internal var snapShot: SnapShot<ROOT> = SnapShot.init(root)
+    internal var snapshot: Snapshot<ROOT> = Snapshot.init(root)
         private set
 
 
     @OptIn(ExperimentalContracts::class)
-    fun <T> perform(block: SnapShotContext<ROOT>.() -> T): T {
+    fun <T> perform(block: SnapshotContext<ROOT>.() -> T): T {
         contract {
             callsInPlace(block, InvocationKind.EXACTLY_ONCE)
         }
-        val context = SnapShotContextImpl(this, snapShot)
+        val context = SnapshotContextImpl(this, snapshot)
         return context.block()
     }
 
@@ -56,33 +56,33 @@ class Database<ROOT : Base>(val name: String, root: ROOT) {
     }
 
     internal class MakeChangeResult<ROOT : Base, T>(
-        val changedSnapShot: SnapShot<ROOT>?,
+        val changedSnapshot: Snapshot<ROOT>?,
         val otherResult: T,
-        val performFullWriteOfSnapShot: Boolean = false
+        val performFullWriteOfSnapshot: Boolean = false
     )
 
     @Synchronized
     internal fun <T> makeChange(block: () -> MakeChangeResult<ROOT, T>): T {
         val makeChangeResult = block()
-        makeChangeResult.changedSnapShot?.let {
+        makeChangeResult.changedSnapshot?.let {
             if (config.writeToFile) {
-                if (snapShot.version == 0L) {
-                    writeDiffSnapShot(snapShot)
+                if (snapshot.version == 0L) {
+                    writeDiffSnapshot(snapshot)
                 }
-                if (makeChangeResult.performFullWriteOfSnapShot || !config.writeDiff(it.version)) {
-                    writeFullSnapShot(it)
+                if (makeChangeResult.performFullWriteOfSnapshot || !config.writeDiff(it.version)) {
+                    writeFullSnapshot(it)
                 } else {
-                    writeDiffSnapShot(it)
+                    writeDiffSnapshot(it)
                 }
             }
-            snapShot = it
+            snapshot = it
         }
         return makeChangeResult.otherResult
     }
 
     fun clearHistory() {
         makeChange {
-            MakeChangeResult(snapShot.clearHistory(), Unit, true)
+            MakeChangeResult(snapshot.clearHistory(), Unit, true)
         }
     }
 
@@ -95,7 +95,7 @@ class Database<ROOT : Base>(val name: String, root: ROOT) {
             .filter { it.name.startsWith("database_${name}_v") && it.name.endsWith("_diff.json") }
             .map { it to it.name.removePrefix("database_${name}_v").removeSuffix("_diff.json").toLong() }
             .sortedBy { it.second }
-            .fold(null) { snapShot1: SnapShot<ROOT>?, (file, version) ->
+            .fold(null) { snapShot1: Snapshot<ROOT>?, (file, version) ->
 
                 val diff = json.decodeFromString<Diff>(Files.readString(file.toPath()))
 
@@ -114,7 +114,7 @@ class Database<ROOT : Base>(val name: String, root: ROOT) {
                     }
                 }
 
-                SnapShot(
+                Snapshot(
                     version,
                     diff.time,
                     diff.rootId,
@@ -127,20 +127,20 @@ class Database<ROOT : Base>(val name: String, root: ROOT) {
 
         if (snapShotRead != null) {
             idGen.set(snapShotRead.allEntries.maxOf { it.value.id })
-            snapShot = snapShotRead
+            snapshot = snapShotRead
         }
     }
 
-    fun writeFullSnapShot(snapShot: SnapShot<ROOT> = this.snapShot) {
-        val snapShot1 = snapShot
+    fun writeFullSnapshot(snapshot: Snapshot<ROOT> = this.snapshot) {
+        val snapShot1 = snapshot
         val file = File("database_${name}_v${snapShot1.version}_full.json")
         Files.writeString(file.toPath(), json.encodeToString(snapShot1.toFullSerialization())) // TODO encodeToStream
         println(file.name)
     }
 
-    private fun writeDiffSnapShot(changedSnapShot: SnapShot<ROOT>) {
-        val file = File("database_${name}_v${changedSnapShot.version}_diff.json")
-        Files.writeString(file.toPath(), json.encodeToString(changedSnapShot.toDiffSerialization())) // TODO encodeToStream
+    private fun writeDiffSnapshot(changedSnapshot: Snapshot<ROOT>) {
+        val file = File("database_${name}_v${changedSnapshot.version}_diff.json")
+        Files.writeString(file.toPath(), json.encodeToString(changedSnapshot.toDiffSerialization())) // TODO encodeToStream
         println(file.name)
     }
 

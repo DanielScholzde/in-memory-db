@@ -2,7 +2,7 @@ package de.danielscholz.database.core.context
 
 import de.danielscholz.database.core.Base
 import de.danielscholz.database.core.ID
-import de.danielscholz.database.core.SnapShot
+import de.danielscholz.database.core.Snapshot
 import kotlinx.datetime.Instant
 import kotlinx.serialization.Serializable
 
@@ -15,4 +15,4 @@ internal class Diff(
 )
 
 
-internal fun SnapShot<*>.toDiffSerialization() = Diff(time, changed, rootId)
+internal fun Snapshot<*>.toDiffSerialization() = Diff(time, changed, rootId)

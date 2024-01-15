@@ -2,7 +2,7 @@ package de.danielscholz.database
 
 import de.danielscholz.database.core.Base
 import de.danielscholz.database.core.Database
-import de.danielscholz.database.core.SnapShot
+import de.danielscholz.database.core.Snapshot
 import de.danielscholz.database.core.context.Reference
 import de.danielscholz.database.core.util.performEach
 import de.danielscholz.database.demo.Item
@@ -135,16 +135,16 @@ class Test1 {
                 itemGroupHist1.itemIds.size shouldBe 1
             }
 
-            println("SnapShot.version: ${snapShot.version}")
+            println("Snapshot.version: ${snapShot.version}")
             soapRef.get().print().price shouldBe 3.99
             root.print().title shouldBe "My Shop"
 
             soapRef.get().getVersionBefore()!!.perform { itemHist1 ->
-                println("SnapShot.version: ${snapShot.version}")
+                println("Snapshot.version: ${snapShot.version}")
                 itemHist1.print().price shouldBe 2.99
 
                 itemHist1.getVersionBefore()!!.perform { itemHist2 ->
-                    println("SnapShot.version: ${snapShot.version}")
+                    println("Snapshot.version: ${snapShot.version}")
                     itemHist2.print().price shouldBe 1.79
                     itemHist2.itemGroup().print().itemIds.size shouldBe 1
                     root.print().title shouldBe "Shop 1"
@@ -256,18 +256,18 @@ class Test1 {
             soapRef.get().change(price = 3.99)
         }
 
-        val snapShot = database.snapShot
+        val snapShot = database.snapshot
 
         database.readFromFileSystem()
 
-        checkSnapShots(database.snapShot, snapShot)
+        checkSnapshots(database.snapshot, snapShot)
 
 
         database.clearHistory()
 
     }
 
-    private fun checkSnapShots(current: SnapShot<*>, expected: SnapShot<*>) {
+    private fun checkSnapshots(current: Snapshot<*>, expected: Snapshot<*>) {
         current.version shouldBe expected.version
         current.time shouldBe expected.time
         current.rootId shouldBe expected.rootId
@@ -280,7 +280,7 @@ class Test1 {
         current.snapShotHistory.entries.forEach {
             val value1 = it.value
             val value2 = expected.snapShotHistory[it.key]!!
-            checkSnapShots(value1, value2)
+            checkSnapshots(value1, value2)
         }
     }
 

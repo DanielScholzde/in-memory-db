@@ -7,7 +7,7 @@ import de.danielscholz.database.core.EXT_REF_IDX
 import de.danielscholz.database.core.ID
 import de.danielscholz.database.core.SNAPSHOT_VERSION
 import de.danielscholz.database.core.context.ChangeContext
-import de.danielscholz.database.core.context.SnapShotContext
+import de.danielscholz.database.core.context.SnapshotContext
 import de.danielscholz.database.serializer.PersistentSetSerializer
 import kotlinx.collections.immutable.ImmutableMap
 import kotlinx.collections.immutable.ImmutableSet
@@ -31,7 +31,7 @@ class Item private constructor(
         // will be generated in future
         context(ChangeContext<Shop>)
         fun of(title: String, price: Double): Item {
-            return Item(database.getNextId(), 0, nextSnapShotVersion, title, price).persist()
+            return Item(database.getNextId(), 0, nextSnapshotVersion, title, price).persist()
         }
     }
 
@@ -40,7 +40,7 @@ class Item private constructor(
     fun change(title: String = this.title, price: Double = this.price): Item {
         this.checkIsCurrent()
         if (title != this.title || price != this.price) {
-            return Item(id, version + 1, nextSnapShotVersion, title, price).persist()
+            return Item(id, version + 1, nextSnapshotVersion, title, price).persist()
         }
         return this
     }
@@ -48,7 +48,7 @@ class Item private constructor(
     // there is no changeIntern method because there are no external references
 
     // will be generated in future
-    context(SnapShotContext<Shop>)
+    context(SnapshotContext<Shop>)
     fun itemGroup(): ItemGroup {
         this.checkIsCurrent()
         return this.getReferencedBy(0).first() as ItemGroup

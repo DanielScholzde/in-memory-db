@@ -5,20 +5,20 @@ import de.danielscholz.database.core.Database
 import de.danielscholz.database.core.EXT_REF_IDX
 import de.danielscholz.database.core.ID
 import de.danielscholz.database.core.SNAPSHOT_VERSION
-import de.danielscholz.database.core.SnapShot
+import de.danielscholz.database.core.Snapshot
 
 
 /**
- * Context holding one database SnapShot.
+ * Context holding one database snapshot.
  * All methods and values provided here are thread-safe.
  */
-interface SnapShotContext<ROOT : Base> {
+interface SnapshotContext<ROOT : Base> {
 
-    val context: SnapShotContext<ROOT>
+    val context: SnapshotContext<ROOT>
 
     val database: Database<ROOT>
 
-    val snapShot: SnapShot<ROOT>
+    val snapShot: Snapshot<ROOT>
 
     val root: ROOT
 
@@ -27,7 +27,7 @@ interface SnapShotContext<ROOT : Base> {
     fun <T : Base> T.asRef(): Reference<ROOT, T>
 
     /**
-     * Checks if given entry has the same version as entry within SnapShot
+     * Checks if given entry has the same version as entry within snapshot
      */
     fun Base.checkIsCurrent()
 
@@ -60,11 +60,11 @@ interface SnapShotContext<ROOT : Base> {
  * Context for an update.
  * All methods should only be called by one thread!
  */
-interface ChangeContext<ROOT : Base> : SnapShotContext<ROOT> {
+interface ChangeContext<ROOT : Base> : SnapshotContext<ROOT> {
 
-    context(SnapShotContext<ROOT>)
+    context(SnapshotContext<ROOT>)
     fun <T : Base> T.persist(): T
 
-    val nextSnapShotVersion: SNAPSHOT_VERSION
+    val nextSnapshotVersion: SNAPSHOT_VERSION
 
 }

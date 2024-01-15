@@ -8,7 +8,7 @@ import de.danielscholz.database.core.ID
 import de.danielscholz.database.core.SNAPSHOT_VERSION
 import de.danielscholz.database.core.context.ChangeContext
 import de.danielscholz.database.core.context.ChangeContextImpl
-import de.danielscholz.database.core.context.SnapShotContext
+import de.danielscholz.database.core.context.SnapshotContext
 import de.danielscholz.database.serializer.PersistentSetSerializer
 import kotlinx.collections.immutable.ImmutableMap
 import kotlinx.collections.immutable.ImmutableSet
@@ -49,19 +49,19 @@ class Shop private constructor(
         this.checkIsCurrent()
         if (title != this.title || itemGroupIds != this.itemGroupIds) {
             (context as ChangeContextImpl).changedReferences(id, 0, this.itemGroupIds, itemGroupIds)
-            return Shop(id, version + 1, nextSnapShotVersion, title, itemGroupIds).persist()
+            return Shop(id, version + 1, nextSnapshotVersion, title, itemGroupIds).persist()
         }
         return this
     }
 
     // will be generated in future
-    context(SnapShotContext<Shop>)
+    context(SnapshotContext<Shop>)
     fun itemGroups(): Collection<ItemGroup> {
         this.checkIsCurrent()
         return itemGroupIds.map { it.resolve() as ItemGroup }
     }
 
-    context(SnapShotContext<Shop>)
+    context(SnapshotContext<Shop>)
     fun itemGroupsSorted(): List<ItemGroup> = itemGroups().sortedBy { it.id }
 
 
