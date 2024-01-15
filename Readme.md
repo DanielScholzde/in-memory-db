@@ -147,3 +147,15 @@
             }
         }
     }
+
+    // database prevent updates of outdated objects:
+    database.perform {
+        val milk = milkRef.get()
+        update {
+            milk.change(price = 2.49)
+        }
+        ...
+        update {
+            milk.change(price = 2.99) // will throw an exception
+        }
+    }
