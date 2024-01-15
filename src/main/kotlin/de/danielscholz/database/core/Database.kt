@@ -1,11 +1,15 @@
 package de.danielscholz.database.core
 
 import de.danielscholz.database.core.context.ChangeContext
+import de.danielscholz.database.core.context.ChangeContextImpl
 import de.danielscholz.database.core.context.Diff
 import de.danielscholz.database.core.context.SnapShotContext
 import de.danielscholz.database.core.context.SnapShotContextImpl
 import de.danielscholz.database.core.context.toDiffSerialization
 import de.danielscholz.database.core.context.toFullSerialization
+import kotlinx.collections.immutable.persistentMapOf
+import kotlinx.collections.immutable.persistentSetOf
+import kotlinx.collections.immutable.toPersistentMap
 import kotlinx.collections.immutable.toPersistentSet
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -22,9 +26,10 @@ import kotlin.contracts.contract
 
 typealias ID = Long
 typealias SNAPSHOT_VERSION = Long
+typealias EXT_REF_IDX = Byte
 
 
-class Database<ROOT : Base>(val name: String, private val root: ROOT) {
+class Database<ROOT : Base>(val name: String, root: ROOT) {
 
     private val idGen = AtomicLong(root.id)
 
@@ -61,6 +66,9 @@ class Database<ROOT : Base>(val name: String, private val root: ROOT) {
         val makeChangeResult = block()
         makeChangeResult.changedSnapShot?.let {
             if (config.writeToFile) {
+                if (snapShot.version == 0L) {
+                    writeDiffSnapShot(snapShot)
+                }
                 if (makeChangeResult.performFullWriteOfSnapShot || !config.writeDiff(it.version)) {
                     writeFullSnapShot(it)
                 } else {
@@ -78,28 +86,49 @@ class Database<ROOT : Base>(val name: String, private val root: ROOT) {
         }
     }
 
+    /**
+     * Reads database content from file system.
+     */
     fun readFromFileSystem() {
+        // TODO reads only diffs currently
         val snapShotRead = File(".").listFiles()!!.asSequence()
             .filter { it.name.startsWith("database_${name}_v") && it.name.endsWith("_diff.json") }
             .map { it to it.name.removePrefix("database_${name}_v").removeSuffix("_diff.json").toLong() }
             .sortedBy { it.second }
-            .fold(SnapShot.init(root)) { snapShot1, (file, version) ->
+            .fold(null) { snapShot1: SnapShot<ROOT>?, (file, version) ->
+
                 val diff = json.decodeFromString<Diff>(Files.readString(file.toPath()))
 
-                val allEntries = snapShot1.allEntries.putAll(diff.changed.associateBy { it.id })
+                val allEntries =
+                    snapShot1?.allEntries?.putAll(diff.changed.associateBy { it.id }) ?: diff.changed.associateBy { it.id }.toPersistentMap()
+
+                var backReferences = snapShot1?.backReferences ?: persistentMapOf()
+
+                diff.changed.forEach { entryAfter ->
+                    val entryBefore = snapShot1?.allEntries?.get(entryAfter.id)
+                    val referencedIdsBefore = entryBefore?.referencedIds
+                    entryAfter.referencedIds.forEach {
+                        val idsBefore = referencedIdsBefore?.get(it.key) ?: persistentSetOf()
+                        val idsAfter = it.value
+                        backReferences = ChangeContextImpl.changedReferences(backReferences, entryAfter.id, it.key, idsBefore, idsAfter)
+                    }
+                }
 
                 SnapShot(
                     version,
-                    snapShot1.time,
-                    snapShot1.rootId,
+                    diff.time,
+                    diff.rootId,
                     allEntries,
                     diff.changed.toPersistentSet(),
-                    snapShot1.snapShotHistory.put(version - 1, snapShot1)
+                    snapShot1?.snapShotHistory?.put(version - 1, snapShot1) ?: persistentMapOf(),
+                    backReferences
                 )
             }
 
-        idGen.set(snapShotRead.allEntries.maxOf { it.value.id })
-        snapShot = snapShotRead
+        if (snapShotRead != null) {
+            idGen.set(snapShotRead.allEntries.maxOf { it.value.id })
+            snapShot = snapShotRead
+        }
     }
 
     fun writeFullSnapShot(snapShot: SnapShot<ROOT> = this.snapShot) {

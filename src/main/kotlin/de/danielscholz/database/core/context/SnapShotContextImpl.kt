@@ -1,9 +1,9 @@
 package de.danielscholz.database.core.context
 
-import com.google.common.collect.MultimapBuilder
-import com.google.common.collect.SetMultimap
+import de.danielscholz.database.core.BackRef
 import de.danielscholz.database.core.Base
 import de.danielscholz.database.core.Database
+import de.danielscholz.database.core.EXT_REF_IDX
 import de.danielscholz.database.core.EntryNotFoundException
 import de.danielscholz.database.core.ID
 import de.danielscholz.database.core.SnapShot
@@ -50,9 +50,9 @@ class SnapShotContextImpl<ROOT : Base>(override val database: Database<ROOT>, sn
         snapShot.allEntries[this] ?: throw EntryNotFoundException("Entry with id $this could not be found within snapShot ${snapShot.version}!")
 
 
-    override fun Base.getReferencedBy(): Collection<Base> {
-        val referencedByObjectIds = snapShot.backReferences[this.id]
-        return referencedByObjectIds.map { it.resolve() }
+    override fun Base.getReferencedBy(sourceRefIdx: EXT_REF_IDX): Collection<Base> {
+        val referencedByObjectIds = snapShot.backReferences[BackRef(this.id, sourceRefIdx)]
+        return referencedByObjectIds?.map { it.resolve() } ?: setOf()
     }
 
     override fun <T : Base> T.asRef(): Reference<ROOT, T> {
@@ -67,6 +67,9 @@ class SnapShotContextImpl<ROOT : Base>(override val database: Database<ROOT>, sn
         return getVersionBefore(this, snapShot, database)
     }
 
+    override val context: SnapShotContext<ROOT>
+        get() = this
+
 
     override fun <T> update(update: ChangeContext<ROOT>.() -> T): T { // result may contain one or many references
         var changedSnapShot: SnapShot<ROOT>? = null
@@ -80,31 +83,7 @@ class SnapShotContextImpl<ROOT : Base>(override val database: Database<ROOT>, sn
 
             if (changeContext.changed.isNotEmpty()) {
 
-                val newEntries = mutableSetOf<Base>()
-                val changedEntries = mutableSetOf<Base>()
-                val backReferences: SetMultimap<ID, ID> = MultimapBuilder.hashKeys().hashSetValues().build()
-
-                changeContext.changed.values.forEach {
-                    val old = snapShot.allEntries[it.id]
-
-                    it.referencedIds.forEach { refId ->
-                        backReferences.put(refId, it.id)
-                    }
-
-                    if (old != null) {
-                        val removed = old.referencedIds - it.referencedIds
-                    } else {
-                        newEntries += it
-                    }
-                }
-
-                if (newEntries.isNotEmpty()) {
-                    newEntries.forEach {
-                        // TODO
-                    }
-                }
-
-                changedSnapShot = snapShot.copyIntern(snapShot.rootId, changeContext.changed.values)
+                changedSnapShot = snapShot.copyIntern(snapShot.rootId, changeContext.changed.values, changeContext.backReferences)
 
                 changeContext.changed.forEach {
                     if (it.value.snapShotVersion != changedSnapShot!!.version) throw Exception("Internal error")

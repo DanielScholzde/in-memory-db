@@ -2,6 +2,7 @@ package de.danielscholz.database
 
 import de.danielscholz.database.core.Base
 import de.danielscholz.database.core.Database
+import de.danielscholz.database.core.SnapShot
 import de.danielscholz.database.core.context.Reference
 import de.danielscholz.database.core.util.performEach
 import de.danielscholz.database.demo.Item
@@ -259,12 +260,28 @@ class Test1 {
 
         database.readFromFileSystem()
 
-        snapShot.version shouldBe database.snapShot.version
-        snapShot.allEntries.map { it.key } shouldBe database.snapShot.allEntries.map { it.key }
-        snapShot.snapShotHistory.map { it.key to it.value.allEntries.size } shouldBe database.snapShot.snapShotHistory.map { it.key to it.value.allEntries.size }
+        checkSnapShots(database.snapShot, snapShot)
+
 
         database.clearHistory()
 
+    }
+
+    private fun checkSnapShots(current: SnapShot<*>, expected: SnapShot<*>) {
+        current.version shouldBe expected.version
+        current.time shouldBe expected.time
+        current.rootId shouldBe expected.rootId
+        current.allEntries.map { it.key }.toSet() shouldBe expected.allEntries.map { it.key }.toSet()
+        current.changed.map { it.id }.toSet() shouldBe expected.changed.map { it.id }.toSet()
+        current.backReferences shouldBe expected.backReferences
+
+        current.snapShotHistory.map { it.key to it.value.allEntries.size } shouldBe expected.snapShotHistory.map { it.key to it.value.allEntries.size }
+
+        current.snapShotHistory.entries.forEach {
+            val value1 = it.value
+            val value2 = expected.snapShotHistory[it.key]!!
+            checkSnapShots(value1, value2)
+        }
     }
 
     @Test

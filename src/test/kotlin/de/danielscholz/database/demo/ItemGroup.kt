@@ -3,12 +3,17 @@
 package de.danielscholz.database.demo
 
 import de.danielscholz.database.core.Base
+import de.danielscholz.database.core.EXT_REF_IDX
 import de.danielscholz.database.core.ID
 import de.danielscholz.database.core.SNAPSHOT_VERSION
 import de.danielscholz.database.core.context.ChangeContext
+import de.danielscholz.database.core.context.ChangeContextImpl
 import de.danielscholz.database.core.context.SnapShotContext
 import de.danielscholz.database.serializer.PersistentSetSerializer
+import kotlinx.collections.immutable.ImmutableMap
+import kotlinx.collections.immutable.ImmutableSet
 import kotlinx.collections.immutable.PersistentSet
+import kotlinx.collections.immutable.persistentMapOf
 import kotlinx.collections.immutable.persistentSetOf
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -38,6 +43,7 @@ class ItemGroup private constructor(
     private fun changeIntern(title: String = this.title, itemIds: PersistentSet<ID> = this.itemIds): ItemGroup {
         this.checkIsCurrent()
         if (title != this.title || itemIds != this.itemIds) {
+            (context as ChangeContextImpl).changedReferences(id, 0, this.itemIds, itemIds)
             return ItemGroup(id, version + 1, nextSnapShotVersion, title, itemIds).persist()
         }
         return this
@@ -53,7 +59,7 @@ class ItemGroup private constructor(
     context(SnapShotContext<Shop>)
     fun getShop(): Shop {
         this.checkIsCurrent()
-        return this.getReferencedBy().filterIsInstance<Shop>().first()
+        return this.getReferencedBy(0).first() as Shop
     }
 
     // generated
@@ -91,6 +97,6 @@ class ItemGroup private constructor(
     }
 
     // generated
-    override val referencedIds get() = itemIds
+    override val referencedIds: ImmutableMap<EXT_REF_IDX, ImmutableSet<ID>> get() = persistentMapOf(0.toByte() to itemIds)
 
 }

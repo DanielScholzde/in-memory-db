@@ -2,12 +2,15 @@ package de.danielscholz.database.core.context
 
 import de.danielscholz.database.core.Base
 import de.danielscholz.database.core.Database
+import de.danielscholz.database.core.EXT_REF_IDX
 import de.danielscholz.database.core.ID
 import de.danielscholz.database.core.SNAPSHOT_VERSION
 import de.danielscholz.database.core.SnapShot
 
 
 interface SnapShotContext<ROOT : Base> {
+
+    val context: SnapShotContext<ROOT>
 
     val database: Database<ROOT>
 
@@ -24,7 +27,7 @@ interface SnapShotContext<ROOT : Base> {
      */
     fun Base.checkIsCurrent()
 
-    fun Base.getReferencedBy(): Collection<Base>
+    fun Base.getReferencedBy(sourceRefIdx: EXT_REF_IDX): Collection<Base>
 
     fun <T : Base> T.getVersionBefore(): HistoryEntryContext<T, ROOT>?
 

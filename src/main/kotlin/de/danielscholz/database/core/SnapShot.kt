@@ -2,8 +2,6 @@
 
 package de.danielscholz.database.core
 
-import com.google.common.collect.MultimapBuilder
-import com.google.common.collect.SetMultimap
 import de.danielscholz.database.core.util.addOrReplace
 import de.danielscholz.database.serializer.PersistentSetSerializer
 import kotlinx.collections.immutable.PersistentMap
@@ -22,10 +20,12 @@ class SnapShot<ROOT : Base> internal constructor(
     internal val rootId: ID,
     internal val allEntries: PersistentMap<ID, Base>,
     internal val changed: PersistentSet<Base>,
-    internal val snapShotHistory: PersistentMap<SNAPSHOT_VERSION, SnapShot<ROOT>>
+    internal val snapShotHistory: PersistentMap<SNAPSHOT_VERSION, SnapShot<ROOT>>,
+    internal val backReferences: PersistentMap<BackRef, PersistentSet<ID>>,
 ) {
 
     companion object {
+
         fun <ROOT : Base> init(root: ROOT): SnapShot<ROOT> {
             return SnapShot(
                 rootId = root.id,
@@ -33,27 +33,17 @@ class SnapShot<ROOT : Base> internal constructor(
                 version = 0,
                 changed = persistentSetOf(root),
                 allEntries = persistentMapOf(root.id to root),
-                snapShotHistory = persistentMapOf()
+                snapShotHistory = persistentMapOf(),
+                backReferences = persistentMapOf() // TODO may root already contain referenced objects?
             )
-        }
-    }
-
-    // TODO
-    internal val backReferences: SetMultimap<ID, ID> = MultimapBuilder.hashKeys().hashSetValues().build()
-
-    init {
-        // TODO
-        allEntries.values.forEach {
-            it.referencedIds.forEach { refId ->
-                backReferences.put(refId, it.id)
-            }
         }
     }
 
 
     internal fun copyIntern(
         rootId: ID,
-        changedEntries: Collection<Base>
+        changedEntries: Collection<Base>,
+        backReferences: PersistentMap<BackRef, PersistentSet<ID>>,
     ): SnapShot<ROOT> {
         return SnapShot(
             version + 1,
@@ -61,7 +51,8 @@ class SnapShot<ROOT : Base> internal constructor(
             rootId,
             allEntries.addOrReplace(changedEntries.toList()),
             changedEntries.toPersistentSet(),
-            snapShotHistory.put(version, this)
+            snapShotHistory.put(version, this),
+            backReferences
         )
     }
 
@@ -72,7 +63,8 @@ class SnapShot<ROOT : Base> internal constructor(
             rootId,
             allEntries,
             persistentSetOf(),
-            persistentMapOf()
+            persistentMapOf(),
+            backReferences
         )
     }
 
