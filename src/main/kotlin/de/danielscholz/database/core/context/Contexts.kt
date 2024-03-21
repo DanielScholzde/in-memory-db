@@ -56,6 +56,10 @@ interface SnapshotContext<ROOT : Base> {
 
 }
 
+interface SnapshotContextFinal<ROOT : Base> : SnapshotContext<ROOT> {
+
+}
+
 /**
  * Context for an update.
  * All methods should only be called by one thread!

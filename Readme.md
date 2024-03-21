@@ -26,11 +26,12 @@
     - Little, but understandable code
     - No surprises during use
     - There is usually exactly one way to complete a task
-        - Incorrect use should result in an exception
+        - Incorrect use should be prevented by compiler (DSL) or result in an exception
 
 ## Disadvantages:
 
 - The entire database is kept in memory; currently no lazy loading of data possible
+    - lazy loading of historized data may be implemented in future
 - JSON write speed to disc is currently not yet as good as expected
 - The database is currently designed for a small to medium-sized database with few updates but many reads
     - write to disc is a limiting factor

@@ -3,7 +3,7 @@ package de.danielscholz.database.core
 import de.danielscholz.database.core.context.ChangeContext
 import de.danielscholz.database.core.context.ChangeContextImpl
 import de.danielscholz.database.core.context.Diff
-import de.danielscholz.database.core.context.SnapshotContext
+import de.danielscholz.database.core.context.SnapshotContextFinal
 import de.danielscholz.database.core.context.SnapshotContextImpl
 import de.danielscholz.database.core.context.toDiffSerialization
 import de.danielscholz.database.core.context.toFullSerialization
@@ -41,7 +41,7 @@ class Database<ROOT : Base>(val name: String, root: ROOT) {
 
 
     @OptIn(ExperimentalContracts::class)
-    fun <T> perform(block: SnapshotContext<ROOT>.() -> T): T {
+    fun <T> perform(block: SnapshotContextFinal<ROOT>.() -> T): T {
         contract {
             callsInPlace(block, InvocationKind.EXACTLY_ONCE)
         }
