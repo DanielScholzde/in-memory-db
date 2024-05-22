@@ -25,11 +25,9 @@ dependencies {
 tasks.test {
     useJUnitPlatform()
 }
-kotlin {
-    jvmToolchain(17)
-}
 
-tasks.withType<KotlinCompile>().configureEach {
+kotlin {
+    jvmToolchain(21)
     compilerOptions {
         freeCompilerArgs.add("-Xcontext-receivers")
     }
