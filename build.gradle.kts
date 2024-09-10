@@ -1,8 +1,8 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-    kotlin("jvm") version "1.9.22"
-    kotlin("plugin.serialization") version "1.9.22"
+    kotlin("jvm") version "1.9.24"
+    kotlin("plugin.serialization") version "1.9.24"
 }
 
 group = "de.danielscholz"
@@ -13,13 +13,13 @@ repositories {
 }
 
 dependencies {
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.2")
-    implementation("org.jetbrains.kotlinx:kotlinx-collections-immutable:0.3.7")
-    implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.5.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
+    implementation("org.jetbrains.kotlinx:kotlinx-collections-immutable:0.3.8")
+    implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.1")
 
     testImplementation("org.jetbrains.kotlin:kotlin-test")
-    testImplementation("org.jetbrains.kotlin:kotlin-reflect:1.9.21")
-    testImplementation("io.kotest:kotest-assertions-core:5.8.0")
+    testImplementation("org.jetbrains.kotlin:kotlin-reflect:1.9.24")
+    testImplementation("io.kotest:kotest-assertions-core:5.9.1")
 }
 
 tasks.test {
@@ -30,7 +30,7 @@ kotlin {
 }
 
 tasks.withType<KotlinCompile>().configureEach {
-    kotlinOptions {
-        freeCompilerArgs = freeCompilerArgs + "-Xcontext-receivers"
+    compilerOptions {
+        freeCompilerArgs.add("-Xcontext-receivers")
     }
 }
