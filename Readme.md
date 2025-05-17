@@ -45,9 +45,10 @@
 - Entities have 0..n properties and 0..n (named) references to other Entities
     - Change of a property or reference creates a new instance with an incremented version of that entity (id stays the same)
 - Entities are loosely coupled to each other (lookup to other entities is done via foreign id)
-- Two instances/objects are equal if their reference is equals
+- Two instances/objects are equal if their reference is equal
     - this is also a huge performance advantage (no nested deep recursion equals checks are necessary; note: deep recursion may result in reading all
       database entries!)
+    - will be enhanced in future versions; deep equals check may be provided
 - Database object has a synchronized update method to perform changes to the database
     - all actions done within this update should be as fast as possible
         - all data retrieval should/must be done before

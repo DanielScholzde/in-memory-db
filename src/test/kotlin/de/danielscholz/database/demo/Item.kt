@@ -1,4 +1,5 @@
 @file:UseSerializers(PersistentSetSerializer::class)
+@file:Suppress("CONTEXT_RECEIVERS_DEPRECATED")
 
 package de.danielscholz.database.demo
 
@@ -28,14 +29,14 @@ class Item private constructor(
 ) : Base() {
 
     companion object {
-        // will be generated in future
+        // will be generated in the future
         context(ChangeContext<Shop>)
         fun of(title: String, price: Double): Item {
             return Item(database.getNextId(), 0, nextSnapshotVersion, title, price).persist()
         }
     }
 
-    // will be generated in future
+    // will be generated in the future
     context(ChangeContext<Shop>)
     fun change(title: String = this.title, price: Double = this.price): Item {
         this.checkIsCurrent()
@@ -47,19 +48,19 @@ class Item private constructor(
 
     // there is no changeIntern method because there are no external references
 
-    // will be generated in future
+    // will be generated in the future
     context(SnapshotContext<Shop>)
     fun itemGroup(): ItemGroup {
         this.checkIsCurrent()
         return this.getReferencedBy(0).first() as ItemGroup
     }
 
-    // will be generated in future
+    // will be generated in the future
     override fun toString(): String {
         return "Item(id=$id, version=$version, snapShotVersion=$snapshotVersion, title='$title', price=$price)"
     }
 
-    // will be generated in future
+    // will be generated in the future
     override val referencedIds: ImmutableMap<EXT_REF_IDX, ImmutableSet<ID>> get() = persistentMapOf()
 
 }

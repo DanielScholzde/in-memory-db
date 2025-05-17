@@ -62,7 +62,6 @@ interface SnapshotContext<ROOT : Base> {
  */
 interface ChangeContext<ROOT : Base> : SnapshotContext<ROOT> {
 
-    context(SnapshotContext<ROOT>)
     fun <T : Base> T.persist(): T
 
     val nextSnapshotVersion: SNAPSHOT_VERSION

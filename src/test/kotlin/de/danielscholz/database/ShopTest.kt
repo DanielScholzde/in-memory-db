@@ -16,7 +16,7 @@ import org.junit.jupiter.api.assertThrows
 import kotlin.time.measureTime
 
 
-class Test1 {
+class ShopTest {
 
     private lateinit var database: Database<Shop>
 
@@ -100,13 +100,13 @@ class Test1 {
     @Test
     fun test14() {
         database.perform {
-            val soap_ = soapRef.get()
-            soap_.price shouldBe 1.79
+            val soap = soapRef.get()
+            soap.price shouldBe 1.79
             update {
                 val item = soapRef.get()
                 item shouldBe item.change(price = 1.79) // no change
             }
-            soap_ shouldBe soapRef.get()
+            soap shouldBe soapRef.get()
         }
     }
 

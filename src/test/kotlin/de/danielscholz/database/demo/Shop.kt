@@ -1,4 +1,5 @@
 @file:UseSerializers(PersistentSetSerializer::class)
+@file:Suppress("CONTEXT_RECEIVERS_DEPRECATED")
 
 package de.danielscholz.database.demo
 
@@ -36,13 +37,13 @@ class Shop private constructor(
         }
     }
 
-    // will be generated in future
+    // will be generated in the future
     context(ChangeContext<Shop>)
     fun change(title: String = this.title): Shop {
         return changeIntern(title = title)
     }
 
-    // will be generated in future
+    // will be generated in the future
     // private changeIntern method contains itemGroupIds (in general: all external references)
     context(ChangeContext<Shop>)
     private fun changeIntern(title: String = this.title, itemGroupIds: PersistentSet<ID> = this.itemGroupIds): Shop {
@@ -54,7 +55,7 @@ class Shop private constructor(
         return this
     }
 
-    // will be generated in future
+    // will be generated in the future
     context(SnapshotContext<Shop>)
     fun itemGroups(): Collection<ItemGroup> {
         this.checkIsCurrent()
@@ -65,36 +66,36 @@ class Shop private constructor(
     fun itemGroupsSorted(): List<ItemGroup> = itemGroups().sortedBy { it.id }
 
 
-    // will be generated in future
+    // will be generated in the future
     context(ChangeContext<Shop>)
     fun addItemGroup(itemGroup: ItemGroup): Shop {
         return changeIntern(itemGroupIds = itemGroupIds.add(itemGroup.id))
     }
 
-    // will be generated in future
+    // will be generated in the future
     context(ChangeContext<Shop>)
     fun addItemGroups(itemGroups: Set<ItemGroup>): Shop {
         return changeIntern(itemGroupIds = itemGroupIds.addAll(itemGroups.map { it.id }))
     }
 
-    // will be generated in future
+    // will be generated in the future
     context(ChangeContext<Shop>)
     fun removeItemGroup(itemGroup: ItemGroup): Shop {
         return changeIntern(itemGroupIds = itemGroupIds.remove(itemGroup.id))
     }
 
-    // will be generated in future
+    // will be generated in the future
     context(ChangeContext<Shop>)
     fun removeItemGroups(itemGroups: Set<ItemGroup>): Shop {
         return changeIntern(itemGroupIds = itemGroupIds.removeAll(itemGroups.map { it.id }))
     }
 
-    // will be generated in future
+    // will be generated in the future
     override fun toString(): String {
         return "Shop(id=$id, version=$version, snapShotVersion=$snapshotVersion, title='$title', itemGroupIds=$itemGroupIds)"
     }
 
-    // will be generated in future
+    // will be generated in the future
     override val referencedIds: ImmutableMap<EXT_REF_IDX, ImmutableSet<ID>> get() = persistentMapOf(0.toByte() to itemGroupIds)
 
 }

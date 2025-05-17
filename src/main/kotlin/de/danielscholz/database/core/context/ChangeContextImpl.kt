@@ -74,7 +74,6 @@ class ChangeContextImpl<ROOT : Base>(
     }
 
 
-    context(ChangeContext<ROOT>)
     override fun <T : Base> T.persist(): T {
         val existing = snapshot.allEntries[this.id]
         if (existing == this) return this

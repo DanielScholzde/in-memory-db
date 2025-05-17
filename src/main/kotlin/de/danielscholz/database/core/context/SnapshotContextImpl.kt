@@ -17,7 +17,7 @@ class SnapshotContextImpl<ROOT : Base>(override val database: Database<ROOT>, sn
 
     companion object {
 
-        // Method needed to be within companion object, because it is used from ChangeContext too
+        // Method needed to be within the companion object, because it is used from ChangeContext too
         internal fun <T : Base, ROOT : Base> getVersionBefore(
             entry: T,
             snapshot: Snapshot<ROOT>,
