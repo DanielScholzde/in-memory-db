@@ -1,4 +1,4 @@
-# Snapshot-based in-memory database with immutable data structures
+# Snapshot-based in-memory database with immutable data structures (Prototype)
 
 ## Advantages:
 
@@ -6,21 +6,21 @@
     - Direct use of Kotlin's powerful collections/streaming API (map/reduce)
     - Parallel reading with many threads is no problem at all
 - Isolation level is always 'Serializable' (highest possible)
-- Database reports may run over hours with no disadvantages (no blocking of other reads/writes to database)
-    - Reports are consistent because of 'serializable' isolation level (whole report has exactly one consistent snapshot as source)
+- Database reports may run over hours with no disadvantages (no blocking of other reads/writes to the database)
+    - Reports are consistent because of 'serializable' isolation level (the whole report has exactly one consistent snapshot as source)
 - Circular dependencies are no problem (even self-references are permitted)
     - Bidirectional mapping is supplied out of the box
 - Immutable datastructures
     - A new database snapshot is created on every change
     - You also get a full history/audit for free with nearly no additional costs!
         - History can be disabled to save memory
-- Content of database is stored as diff files (format: json) to file system
+- Content of the database is stored as diff files (format: json) in the file system
     - Full database content is written asynchronous to filesystem with a customizable interval (tbd.)
-    - All diff files will be appended to data store (no changes are made after write)
-- The entire implementation is very small (about 500 LOC), everyone can understand what is going on in a short time
+  - All diff files will be appended to a data store (no changes are made after writing)
+- The entire implementation is tiny (about 500 LOC), everyone can understand what is going on in a short time
 - Support for all (immutable) data types which can be serialized via kotlinx serialization are permitted (custom serializer can be used)
 - Database migrations are supported through Kotlin's support of default values and kotlinx serializations @SerialName annotation. Further changes
-  (structural data changes) can be done via a Kotlin migration script which reads all data of the old database format into memory and transform it to
+  (structural data changes) can be done via a Kotlin migration script which reads all data of the old database format into memory and transforms it to
   the new database format. Enhanced support will be available in future releases.
 - The design follows these rules:
     - Little, but understandable code
@@ -30,7 +30,7 @@
 
 ## Disadvantages:
 
-- The entire database is kept in memory; currently no lazy loading of data possible
+- The entire database is kept in memory; currently no lazy loading of data is possible
 - JSON write speed to disc is currently not yet as good as expected
 - The database is currently designed for a small to medium-sized database with few updates but many reads
     - write to disc is a limiting factor
@@ -41,7 +41,7 @@
 
 - A database snapshot is a directed graph of immutable Entities having exactly one root/entry node
 - Each node/entity has an ID and a version
-- IDs are unique across whole database (ID sequence generator is shared across all entity classes)
+- IDs are unique across the whole database (ID sequence generator is shared across all entity classes)
 - Entities have 0..n properties and 0..n (named) references to other Entities
     - Change of a property or reference creates a new instance with an incremented version of that entity (id stays the same)
 - Entities are loosely coupled to each other (lookup to other entities is done via foreign id)
@@ -56,12 +56,12 @@
         - pro: no optimistic locking exception can occur
         - pro: code is simple and comprehensive
         - con: update method must be fast
-- For writing changes to filesystem, kotlinx-serialization is used
+- For writing changes to the filesystem, kotlinx-serialization is used
 - For immutable collections, kotlinx-collections-immutable is used
 
 ## Still to be done:
 
-- Code generation of methods within database model (entity classes)
+- Code generation of methods within the database model (entity classes)
 - Tests with a larger database model
 - Create more performance tests
 - Design and create customizable (immutable) indices
