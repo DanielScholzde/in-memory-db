@@ -1,7 +1,7 @@
 
 plugins {
-    kotlin("jvm") version "2.0.21"
-    kotlin("plugin.serialization") version "2.0.21"
+    kotlin("jvm") version "2.2.0-RC"
+    kotlin("plugin.serialization") version "2.2.0-RC"
 }
 
 group = "de.danielscholz"
@@ -17,7 +17,7 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.2")
 
     testImplementation("org.jetbrains.kotlin:kotlin-test")
-    testImplementation("org.jetbrains.kotlin:kotlin-reflect:2.0.21")
+    testImplementation("org.jetbrains.kotlin:kotlin-reflect:2.2.0-RC")
     testImplementation("io.kotest:kotest-assertions-core:5.9.1")
 }
 
@@ -28,6 +28,6 @@ tasks.test {
 kotlin {
     jvmToolchain(17)
     compilerOptions {
-        freeCompilerArgs.add("-Xcontext-receivers")
+        freeCompilerArgs.add("-Xcontext-parameters")
     }
 }

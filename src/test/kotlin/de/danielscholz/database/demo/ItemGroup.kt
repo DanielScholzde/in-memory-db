@@ -1,5 +1,4 @@
 @file:UseSerializers(PersistentSetSerializer::class)
-@file:Suppress("CONTEXT_RECEIVERS_DEPRECATED")
 
 package de.danielscholz.database.demo
 
@@ -33,63 +32,63 @@ class ItemGroup private constructor(
 
     companion object {
         // will be generated in the future
-        context(ChangeContext<Shop>)
-        fun of(title: String): ItemGroup {
+        context(context: ChangeContext<Shop>)
+        fun of(title: String): ItemGroup = with(context) {
             return ItemGroup(database.getNextId(), 0, nextSnapshotVersion, title, persistentSetOf()).persist()
         }
     }
 
     // will be generated in the future
     // public change method must not contain itemIds
-    context(ChangeContext<Shop>)
-    fun change(title: String = this.title): ItemGroup {
+    context(context: ChangeContext<Shop>)
+    fun change(title: String = this.title): ItemGroup = with(context) {
         return changeIntern(title = title)
     }
 
     // will be generated in the future
     // private changeIntern method contains itemIds (in general: all external references)
-    context(ChangeContext<Shop>)
-    private fun changeIntern(title: String = this.title, itemIds: PersistentSet<ID> = this.itemIds): ItemGroup {
-        this.checkIsCurrent()
-        if (title != this.title || itemIds != this.itemIds) {
-            (context as ChangeContextImpl).changedReferences(id, 0, this.itemIds, itemIds)
+    context(context: ChangeContext<Shop>)
+    private fun changeIntern(title: String = this.title, itemIds: PersistentSet<ID> = this.itemIds): ItemGroup = with(context) {
+        checkIsCurrent()
+        if (title != this@ItemGroup.title || itemIds != this@ItemGroup.itemIds) {
+            (context as ChangeContextImpl).changedReferences(id, 0, this@ItemGroup.itemIds, itemIds)
             return ItemGroup(id, version + 1, nextSnapshotVersion, title, itemIds).persist()
         }
-        return this
+        return this@ItemGroup
     }
 
     // will be generated in the future
-    context(SnapshotContext<Shop>)
-    fun shop(): Shop {
-        this.checkIsCurrent()
-        return this.getReferencedBy(0).first() as Shop
+    context(context: SnapshotContext<Shop>)
+    fun shop(): Shop = with(context) {
+        checkIsCurrent()
+        return getReferencedBy(0).first() as Shop
     }
 
     // will be generated in the future
-    context(SnapshotContext<Shop>)
-    fun items(): Collection<Item> {
-        this.checkIsCurrent()
+    context(context: SnapshotContext<Shop>)
+    fun items(): Collection<Item> = with(context) {
+        checkIsCurrent()
         return itemIds.map { it.resolve() as Item }
     }
 
-    context(SnapshotContext<Shop>)
+    context(context: SnapshotContext<Shop>)
     fun itemsSorted(): List<Item> = items().sortedBy { it.id }
 
 
     // will be generated in the future
-    context(ChangeContext<Shop>)
+    context(context: ChangeContext<Shop>)
     fun removeItem(item: Item): ItemGroup {
         return changeIntern(itemIds = itemIds.remove(item.id))
     }
 
     // will be generated in the future
-    context(ChangeContext<Shop>)
+    context(context: ChangeContext<Shop>)
     fun addItem(item: Item): ItemGroup {
         return changeIntern(itemIds = itemIds.add(item.id))
     }
 
     // will be generated in the future
-    context(ChangeContext<Shop>)
+    context(context: ChangeContext<Shop>)
     fun addItems(items: Set<Item>): ItemGroup {
         return changeIntern(itemIds = itemIds.addAll(items.map { it.id }))
     }

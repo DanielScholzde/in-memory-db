@@ -1,5 +1,4 @@
 @file:UseSerializers(PersistentSetSerializer::class)
-@file:Suppress("CONTEXT_RECEIVERS_DEPRECATED")
 
 package de.danielscholz.database.demo
 
@@ -30,29 +29,29 @@ class Item private constructor(
 
     companion object {
         // will be generated in the future
-        context(ChangeContext<Shop>)
-        fun of(title: String, price: Double): Item {
+        context(context: ChangeContext<Shop>)
+        fun of(title: String, price: Double): Item = with(context) {
             return Item(database.getNextId(), 0, nextSnapshotVersion, title, price).persist()
         }
     }
 
     // will be generated in the future
-    context(ChangeContext<Shop>)
-    fun change(title: String = this.title, price: Double = this.price): Item {
-        this.checkIsCurrent()
-        if (title != this.title || price != this.price) {
+    context(context: ChangeContext<Shop>)
+    fun change(title: String = this.title, price: Double = this.price): Item = with(context) {
+        checkIsCurrent()
+        if (title != this@Item.title || price != this@Item.price) {
             return Item(id, version + 1, nextSnapshotVersion, title, price).persist()
         }
-        return this
+        return this@Item
     }
 
     // there is no changeIntern method because there are no external references
 
     // will be generated in the future
-    context(SnapshotContext<Shop>)
-    fun itemGroup(): ItemGroup {
-        this.checkIsCurrent()
-        return this.getReferencedBy(0).first() as ItemGroup
+    context(context: SnapshotContext<Shop>)
+    fun itemGroup(): ItemGroup = with(context) {
+        checkIsCurrent()
+        return getReferencedBy(0).first() as ItemGroup
     }
 
     // will be generated in the future

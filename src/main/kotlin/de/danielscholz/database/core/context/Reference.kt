@@ -6,8 +6,8 @@ import de.danielscholz.database.core.ID
 
 class Reference<ROOT : Base, T : Base>(private val id: ID) {
 
-    context(SnapshotContext<ROOT>)
-    fun get(): T {
+    context(context: SnapshotContext<ROOT>)
+    fun get(): T = with(context) {
         @Suppress("UNCHECKED_CAST")
         return id.resolve() as T
     }
