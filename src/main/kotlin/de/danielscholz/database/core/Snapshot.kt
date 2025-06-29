@@ -9,9 +9,9 @@ import kotlinx.collections.immutable.PersistentSet
 import kotlinx.collections.immutable.persistentMapOf
 import kotlinx.collections.immutable.persistentSetOf
 import kotlinx.collections.immutable.toPersistentSet
-import kotlinx.datetime.Clock
-import kotlinx.datetime.Instant
 import kotlinx.serialization.UseSerializers
+import kotlin.time.Clock
+import kotlin.time.Instant
 
 
 class Snapshot<ROOT : Base> internal constructor(
